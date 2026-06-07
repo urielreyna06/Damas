@@ -51,6 +51,7 @@ function MePage() {
       await setActiveTheme(themeId, token ?? undefined);
       await loadMe();
       setSuccessMsg("Skin activa actualizada.");
+      setTimeout(() => setSuccessMsg(null), 3000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cambiar la skin.");
     } finally {

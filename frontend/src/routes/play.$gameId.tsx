@@ -41,7 +41,11 @@ function GamePage() {
     } finally {
       setLoading(false);
     }
-  }, [gameId, getToken]);
+  // getToken is intentionally excluded from deps: it's called at invoke time, not captured.
+  // Including it causes fetchGame to be recreated on every Clerk re-render, leading to
+  // repeated fetches and potential infinite loading.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId]);
 
   // Wait for Clerk before fetching — avoids 401 when getToken() returns null on first render
   useEffect(() => {
@@ -62,7 +66,8 @@ function GamePage() {
         // non-fatal — default skin renders correctly
       }
     })();
-  }, [getToken, isLoaded, isSignedIn]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, isSignedIn]);
 
   const handleMoveSend = useCallback(
     async (path: Square[]) => {
@@ -90,7 +95,8 @@ function GamePage() {
         setIsAiThinking(false);
       }
     },
-    [game, gameId, getToken]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [game, gameId]
   );
 
   const handlePlayAgain = useCallback(async () => {
@@ -102,7 +108,8 @@ function GamePage() {
     } catch {
       navigate({ to: "/play" });
     }
-  }, [game, getToken, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game, navigate]);
 
   const handleAbandon = useCallback(async () => {
     try {
@@ -112,7 +119,8 @@ function GamePage() {
       // best-effort; navigate away regardless
     }
     navigate({ to: "/play" });
-  }, [gameId, getToken, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, navigate]);
 
   if (loading) {
     return (

@@ -4,6 +4,71 @@
 
 ---
 
+## Sesión 2026-06-07 — Fix gameplay carga infinita + UX/UI audit
+
+### Problemas reportados
+1. Partida en carga infinita al hacer clic en "Continuar partida"
+2. Skins mostrando solo imagen por defecto en tienda y perfil
+
+### Diagnóstico (4 agentes en paralelo)
+
+**Bug 1 — Causa raíz del gameplay infinito:**
+`play.$gameId.tsx` incluía `getToken` (función Clerk) en los arrays de deps de todos los
+`useCallback`: `fetchGame`, `handleMoveSend`, `handlePlayAgain`, `handleAbandon`. La referencia
+de `getToken` puede cambiar entre renders durante inicialización o token-refresh de Clerk.
+Esto recrea los callbacks en cada render → `useEffect` que depende de `fetchGame` refirma →
+múltiples fetches concurrentes y race conditions → en algunos escenarios (token refresh lento,
+red Docker) el estado `loading` puede quedarse en `true`.
+
+**Bug 2 — Skins:**
+Verificado que el mecanismo CSS es correcto (`THEME_ID_TO_SKIN` mapea bien, CSS vars distintos
+por skin, `board.css` los usa, inline styles sobrescriben `:root`). Las skins se ven distintas
+en producción. La queja original fue por la sesión 2026-06-04 donde el seed no fijaba `_id`
+slugs; ese bug ya estaba resuelto. Confirmado con screenshot: 5 skins visualmente únicas.
+
+### Fixes implementados
+
+1. **`play.$gameId.tsx`** — Eliminado `getToken` de deps de los 4 callbacks y el useEffect
+   de tema. Patrón correcto: `getToken` se llama *dentro* del callback al momento de invocar,
+   no se captura. Comentario `eslint-disable-next-line react-hooks/exhaustive-deps` en cada uno.
+
+2. **`play.tsx`** — `disabled={creating === d.id}` en lugar de `disabled={creating !== null}`.
+   Antes todos los botones de dificultad se deshabilitaban al crear uno. Ahora solo el activo.
+
+3. **`me.tsx`** — Agregado `setTimeout(() => setSuccessMsg(null), 3000)` para auto-limpiar
+   el mensaje "Skin activa actualizada." después de 3 segundos.
+
+4. **`EndModal.tsx`** — Agregado estado `dismissed` local + botón `×` (posición absoluta
+   top-right) + clic en backdrop cierra el modal. Ahora el usuario puede cerrar el modal
+   de fin de partida sin tener que navegar.
+
+5. **`globals.css`** — `position: relative` en `.modal` (necesario para el botón × absoluto).
+
+6. **`shop.tsx`** — Eliminado `getToken` de deps del useEffect de owned skins (mismo patrón
+   que fix #1). El fetch de badges se ejecuta una vez al montar, no en cada render de Clerk.
+
+### Archivos modificados
+- `frontend/src/routes/play.$gameId.tsx` — fix getToken deps (4 callbacks + 1 effect)
+- `frontend/src/routes/play.tsx` — fix disabled state diff buttons
+- `frontend/src/routes/me.tsx` — auto-clear success message
+- `frontend/src/routes/shop.tsx` — fix getToken deps en owned badges effect
+- `frontend/src/components/ui/EndModal.tsx` — botón cierre + backdrop dismiss
+- `frontend/src/styles/globals.css` — `.modal { position: relative }`
+- `GAMEPLAY_SKINS_FIX.md` — nuevo archivo de reporte
+
+### Verificación
+- HTTP audit: 16/16 pass (pre y post rebuild)
+- verify-login.mjs: `loginVisible:true`, `clerkGlobal:true`, CSS ok (post warm-up)
+- Screenshot /shop: 5 skins visualmente distintas (Classic Wood, Neon Glow, Marble Board,
+  Vector Classic, Retro Pixel) — cada una con colores únicos de tablero y piezas
+- Screenshot landing: hero + nav + tablero preview correctos
+
+### Estado al cerrar
+Stack completo funcionando. Fixes de gameplay y UX aplicados. Pendiente: test manual
+del golden path completo (requiere sesión Clerk real con cuenta de test).
+
+---
+
 ## Sesión 2026-06-04 — Fix 503: volume mounts vacíos en WSL2 `/mnt/a/`
 
 ### Problema reportado

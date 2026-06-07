@@ -110,7 +110,7 @@ function PlayPage() {
               className="diff-card"
               data-diff={d.id}
               onClick={() => void handleCreate(d.id)}
-              disabled={creating !== null}
+              disabled={creating === d.id}
             >
               <span className={`badge badge-${d.id}`}>
                 <span className="dot" />
