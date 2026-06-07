@@ -1,0 +1,36 @@
+{
+  "name": "@damas/frontend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vinxi dev",
+    "build": "vinxi build",
+    "start": "vinxi start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "1.99.13",
+    "@tanstack/start": "1.99.14",
+    "@tanstack/router-generator": "1.99.14",
+    "@clerk/tanstack-start": "0.4.13",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "vinxi": "0.5.1",
+    "vite": "^6.0.0",
+    "@damas/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.0",
+    "@testing-library/jest-dom": "^6.4.0",
+    "jsdom": "^24.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "vite-tsconfig-paths": "^5.0.0"
+  }
+}

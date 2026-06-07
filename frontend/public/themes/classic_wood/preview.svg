@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60">
+  <rect width="120" height="60" fill="#DEB887" rx="4"/>
+  <!-- Board squares -->
+  <rect x="30" y="5" width="25" height="25" fill="#8B4513" rx="2"/>
+  <rect x="65" y="30" width="25" height="25" fill="#8B4513" rx="2"/>
+  <!-- Red piece -->
+  <circle cx="42" cy="17" r="10" fill="#8B4513"/>
+  <circle cx="42" cy="17" r="8" fill="#C97A2F"/>
+  <ellipse cx="39" cy="14" rx="3" ry="1.5" fill="rgba(255,200,120,0.4)" transform="rotate(-20,39,14)"/>
+  <!-- Black piece -->
+  <circle cx="77" cy="42" r="10" fill="#150A02"/>
+  <circle cx="77" cy="42" r="8" fill="#2A1505"/>
+  <ellipse cx="74" cy="39" rx="3" ry="1.5" fill="rgba(180,130,70,0.3)" transform="rotate(-20,74,39)"/>
+  <text x="60" y="58" text-anchor="middle" font-size="6" fill="#5C2A08" font-family="sans-serif">Classic Wood</text>
+</svg>

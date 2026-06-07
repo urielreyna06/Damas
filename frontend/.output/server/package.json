@@ -1,0 +1,27 @@
+{
+  "name": "@damas/frontend-prod",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@clerk/clerk-react": "5.11.1",
+    "@clerk/shared": "2.9.1",
+    "@clerk/tanstack-start": "0.4.13",
+    "@tanstack/history": "1.99.13",
+    "@tanstack/react-router": "1.99.13",
+    "@tanstack/react-store": "0.7.7",
+    "@tanstack/router-core": "1.99.13",
+    "@tanstack/store": "0.7.7",
+    "dequal": "2.0.3",
+    "jsesc": "3.1.0",
+    "pathe": "1.1.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "scheduler": "0.23.2",
+    "swr": "2.3.4",
+    "tiny-invariant": "1.3.3",
+    "tiny-warning": "1.0.3",
+    "use-sync-external-store": "1.6.0",
+    "vinxi": "0.5.1"
+  }
+}

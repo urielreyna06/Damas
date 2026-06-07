@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="wood-red" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#C97A2F"/>
+      <stop offset="60%" stop-color="#8B4513"/>
+      <stop offset="100%" stop-color="#5C2A08"/>
+    </radialGradient>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feBlend in="SourceGraphic" mode="overlay" result="blend"/>
+      <feComposite in="blend" in2="SourceGraphic" operator="in"/>
+    </filter>
+  </defs>
+  <circle cx="32" cy="32" r="28" fill="url(#wood-red)" stroke="#3E1A08" stroke-width="2.5"/>
+  <circle cx="32" cy="32" r="28" fill="url(#wood-red)" filter="url(#grain)" opacity="0.3"/>
+  <ellipse cx="28" cy="26" rx="6" ry="3" fill="rgba(255,200,120,0.3)" transform="rotate(-20,28,26)"/>
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#F5C07A" stroke-width="1.5" opacity="0.4"/>
+</svg>

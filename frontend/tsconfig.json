@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@damas/shared": ["../packages/shared/src/types.ts"]
+    }
+  },
+  "include": ["src/**/*", "tests/**/*", "app.config.ts"]
+}

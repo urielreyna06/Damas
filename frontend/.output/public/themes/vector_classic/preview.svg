@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60">
+  <rect width="120" height="60" fill="#FAFAFA" rx="4"/>
+  <rect x="0" y="0" width="120" height="60" fill="none" stroke="#E0E0E0" stroke-width="1" rx="4"/>
+  <!-- Red vector piece -->
+  <circle cx="40" cy="27" r="18" fill="#B71C1C"/>
+  <circle cx="40" cy="27" r="16" fill="#E53935"/>
+  <circle cx="40" cy="27" r="11" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+  <ellipse cx="35" cy="21" rx="5" ry="3" fill="rgba(255,255,255,0.3)" transform="rotate(-25,35,21)"/>
+  <!-- Black vector piece -->
+  <circle cx="80" cy="33" r="18" fill="#0D0D0D"/>
+  <circle cx="80" cy="33" r="16" fill="#263238"/>
+  <circle cx="80" cy="33" r="11" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+  <ellipse cx="75" cy="27" rx="5" ry="3" fill="rgba(255,255,255,0.2)" transform="rotate(-25,75,27)"/>
+  <text x="60" y="57" text-anchor="middle" font-size="6" fill="#263238" font-family="sans-serif">Vector Classic</text>
+</svg>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Damas — Play</title>
+<link rel="stylesheet" href="assets/ds.css" />
+<link rel="stylesheet" href="assets/board.css" />
+<style>
+  .play-head { margin-bottom: 28px; }
+  .play-head h1 { font-size: 40px; }
+  .play-head p { color: var(--muted); margin-top: 6px; font-size: 16px; }
+
+  .newgame { padding: 26px; margin-bottom: 40px; }
+  .newgame .ng-title { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-2); font-weight: 600; margin-bottom: 18px; }
+  .ng-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 22px; }
+  .ng-card { position: relative; padding: 18px; border-radius: var(--r-lg); background: var(--bg-2); border: 1px solid var(--line); cursor: pointer; transition: transform .18s var(--ease), border-color .18s, box-shadow .18s; }
+  .ng-card:hover { transform: translateY(-3px); }
+  .ng-card[aria-checked="true"] { border-color: var(--gold-line); box-shadow: var(--sh-glow); background: linear-gradient(180deg, var(--bg-2), #1a1a14); }
+  .ng-card .badge { margin-bottom: 12px; }
+  .ng-card .ng-name { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; }
+  .ng-card .ng-desc { color: var(--muted); font-size: 13.5px; margin-top: 5px; line-height: 1.45; }
+  .ng-check { position: absolute; top: 16px; right: 16px; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line-2); display: grid; place-items: center; color: var(--bg); font-size: 12px; transition: background .18s, border-color .18s; }
+  .ng-card[aria-checked="true"] .ng-check { background: var(--gold); border-color: var(--gold); }
+  .ng-actions { display: flex; align-items: center; gap: 14px; }
+
+  .sec-title { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+  .sec-title h2 { font-size: 24px; }
+  .sec-title .count { color: var(--muted-2); font-size: 14px; }
+
+  .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+  .game-card { padding: 16px; display: flex; gap: 16px; align-items: center; }
+  .gc-board { width: 96px; flex-shrink: 0; }
+  .gc-body { flex: 1; min-width: 0; }
+  .gc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .gc-meta { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .gc-meta .mono { color: var(--text); }
+  .gc-actions { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+  .gc-del { background: none; border: 1px solid var(--line); color: var(--muted-2); width: 34px; height: 34px; border-radius: 9px; cursor: pointer; font-size: 14px; transition: all .18s; flex-shrink: 0; }
+  .gc-del:hover { color: var(--red); border-color: rgba(229,99,77,.4); background: var(--red-dim); }
+
+  .empty { text-align: center; padding: 60px 24px; border: 1px dashed var(--line-2); border-radius: var(--r-xl); }
+  .empty .ebadge { width: 80px; margin: 0 auto 22px; opacity: .9; }
+  .empty h3 { font-size: 22px; }
+  .empty p { color: var(--muted); margin: 8px 0 22px; }
+
+  @media (max-width: 720px) { .ng-grid { grid-template-columns: 1fr; } .play-head h1 { font-size: 32px; } }
+</style>
+</head>
+<body>
+  <div id="nav-slot"></div>
+  <main class="page wrap">
+    <div class="play-head">
+      <h1 class="serif">Play</h1>
+      <p>Pick up where you left off, or start a fresh match against the machine.</p>
+    </div>
+
+    <div class="newgame card">
+      <div class="ng-title">New game · choose difficulty</div>
+      <div class="ng-grid" id="ng-grid" role="radiogroup" aria-label="Difficulty">
+        <div class="ng-card" role="radio" data-diff="easy" tabindex="0">
+          <span class="badge badge-easy"><i class="dot"></i>Easy</span>
+          <span class="ng-check">✓</span>
+          <div class="ng-name">Easy</div>
+          <div class="ng-desc">Casual AI, perfect for learning.</div>
+        </div>
+        <div class="ng-card" role="radio" data-diff="medium" tabindex="0" aria-checked="true">
+          <span class="badge badge-medium"><i class="dot"></i>Medium</span>
+          <span class="ng-check">✓</span>
+          <div class="ng-name">Medium</div>
+          <div class="ng-desc">Tactical AI — it will test you.</div>
+        </div>
+        <div class="ng-card" role="radio" data-diff="hard" tabindex="0">
+          <span class="badge badge-hard"><i class="dot"></i>Hard</span>
+          <span class="ng-check">✓</span>
+          <div class="ng-name">Hard</div>
+          <div class="ng-desc">Deep search. Nearly unbeatable.</div>
+        </div>
+      </div>
+      <div class="ng-actions">
+        <button class="btn btn-gold btn-lg" id="start-btn">Start new game</button>
+        <span class="muted" style="font-size:13.5px;">You move first, always.</span>
+      </div>
+    </div>
+
+    <div class="sec-title">
+      <h2 class="serif">Your games</h2>
+      <span class="count" id="games-count"></span>
+    </div>
+    <div id="games-area"></div>
+  </main>
+
+  <script src="assets/engine.js"></script>
+  <script src="assets/shared.js"></script>
+  <script>
+    Store.mountNav('play');
+
+    // ---- seed a couple of demo games on first visit so the page feels alive ----
+    (function seed() {
+      if (Object.keys(Store.games()).length > 0) return;
+      const make = (diff, plies, ageMin) => {
+        const id = Store.createGame(diff);
+        let b = Damas.initialBoard(), turn = 'human', hist = [];
+        const FILES = ['a','b','c','d','e','f','g','h'];
+        const nm = ([r,c]) => FILES[c] + (8 - r);
+        for (let i = 0; i < plies; i++) {
+          const ms = Damas.legalMoves(b, turn); if (!ms.length) break;
+          const m = ms[Math.floor(Math.random() * ms.length)];
+          hist.push({ by: turn === 'human' ? 'You' : 'Damas', from: nm(m.from), to: nm(m.to), caps: m.captures.length });
+          b = Damas.applyMove(b, m); turn = turn === 'human' ? 'ai' : 'human';
+        }
+        Store.updateGame(id, { board: b, toMove: turn, history: hist, moveCount: hist.length });
+        const g = Store.games(); g[id].updatedAt = Date.now() - ageMin * 60000; Store.saveGames(g);
+      };
+      make('medium', 9, 12);
+      make('hard', 5, 90);
+    })();
+
+    // ---- difficulty selector ----
+    let selectedDiff = 'medium';
+    const grid = document.getElementById('ng-grid');
+    grid.querySelectorAll('.ng-card').forEach(card => {
+      const choose = () => {
+        grid.querySelectorAll('.ng-card').forEach(c => c.setAttribute('aria-checked', 'false'));
+        card.setAttribute('aria-checked', 'true');
+        selectedDiff = card.getAttribute('data-diff');
+      };
+      card.addEventListener('click', choose);
+      card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(); } });
+    });
+    document.getElementById('start-btn').addEventListener('click', () => {
+      const id = Store.createGame(selectedDiff);
+      location.href = 'game.html?g=' + id;
+    });
+
+    // ---- render active games ----
+    function render() {
+      const area = document.getElementById('games-area');
+      const list = Store.activeGames();
+      document.getElementById('games-count').textContent = list.length ? list.length + ' in progress' : '';
+      if (!list.length) {
+        area.innerHTML = `
+          <div class="empty">
+            <div class="ebadge"><div class="board mini" id="empty-board"></div></div>
+            <h3 class="serif">No games yet</h3>
+            <p>Start a new match above and it'll show up here so you can jump back in anytime.</p>
+            <button class="btn btn-gold" onclick="document.getElementById('start-btn').click()">Create your first game</button>
+          </div>`;
+        Store.renderStaticBoard(document.getElementById('empty-board'), { mini: true, skin: Store.activeSkin() });
+        return;
+      }
+      area.innerHTML = '<div class="games-grid" id="gg"></div>';
+      const gg = document.getElementById('gg');
+      const diffBadge = { easy: 'badge-easy', medium: 'badge-medium', hard: 'badge-hard' };
+      const diffLabel = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+      list.forEach(g => {
+        const card = document.createElement('div');
+        card.className = 'card card-hover game-card';
+        card.innerHTML = `
+          <div class="gc-board"><div class="board mini"></div></div>
+          <div class="gc-body">
+            <div class="gc-top">
+              <span class="badge ${diffBadge[g.difficulty]}"><i class="dot"></i>${diffLabel[g.difficulty]}</span>
+              <button class="gc-del" title="Delete game">✕</button>
+            </div>
+            <div class="gc-meta"><span class="mono">${g.moveCount || 0}</span> moves · ${Store.timeAgo(g.updatedAt)}</div>
+            <div class="gc-actions">
+              <a class="btn btn-gold btn-sm" href="game.html?g=${g.id}">Resume</a>
+              <span class="muted" style="font-size:12.5px;">${g.toMove === 'human' ? 'Your turn' : 'AI to move'}</span>
+            </div>
+          </div>`;
+        gg.appendChild(card);
+        Store.renderStaticBoard(card.querySelector('.board.mini'), { mini: true, board: g.board, skin: Store.activeSkin() });
+        card.querySelector('.gc-del').addEventListener('click', () => { Store.deleteGame(g.id); render(); });
+      });
+    }
+    render();
+  </script>
+</body>
+</html>

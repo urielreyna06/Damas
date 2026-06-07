@@ -1,0 +1,1 @@
+import{j as e}from"./client-CXa5-xVL.js";const s={easy:"Fácil",medium:"Medio",hard:"Difícil"},d={easy:"badge badge-easy",medium:"badge badge-medium",hard:"badge badge-hard"};function m({difficulty:a}){return e.jsxs("span",{className:d[a],children:[e.jsx("span",{className:"dot"}),s[a]]})}export{m as D};

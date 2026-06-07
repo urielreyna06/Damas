@@ -1,0 +1,122 @@
+{
+  "_DifficultyBadge-CAEjew8l.js": {
+    "file": "assets/DifficultyBadge-CAEjew8l.js",
+    "name": "DifficultyBadge",
+    "imports": [
+      "_client-CXa5-xVL.js"
+    ]
+  },
+  "_StaticBoard-C-VpSCjJ.js": {
+    "file": "assets/StaticBoard-C-VpSCjJ.js",
+    "name": "StaticBoard",
+    "imports": [
+      "_client-CXa5-xVL.js",
+      "_skins-COKJgQCr.js"
+    ]
+  },
+  "_api-BJy07AZB.js": {
+    "file": "assets/api-BJy07AZB.js",
+    "name": "api"
+  },
+  "_client-B2QxRX8-.css": {
+    "file": "assets/client-B2QxRX8-.css",
+    "src": "_client-B2QxRX8-.css"
+  },
+  "_client-CXa5-xVL.js": {
+    "file": "assets/client-CXa5-xVL.js",
+    "name": "client",
+    "dynamicImports": [
+      "src/routes/shop.tsx?tsr-split",
+      "src/routes/play.tsx?tsr-split",
+      "src/routes/me.tsx?tsr-split",
+      "src/routes/leaderboard.tsx?tsr-split",
+      "src/routes/index.tsx?tsr-split",
+      "src/routes/play.$gameId.tsx?tsr-split"
+    ],
+    "css": [
+      "assets/client-B2QxRX8-.css"
+    ]
+  },
+  "_skins-COKJgQCr.js": {
+    "file": "assets/skins-COKJgQCr.js",
+    "name": "skins"
+  },
+  "src/routes/index.tsx?tsr-split": {
+    "file": "assets/index-i6GGkbgx.js",
+    "name": "index",
+    "src": "src/routes/index.tsx?tsr-split",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-CXa5-xVL.js",
+      "_api-BJy07AZB.js",
+      "_StaticBoard-C-VpSCjJ.js",
+      "_skins-COKJgQCr.js"
+    ]
+  },
+  "src/routes/leaderboard.tsx?tsr-split": {
+    "file": "assets/leaderboard-SW63oK4l.js",
+    "name": "leaderboard",
+    "src": "src/routes/leaderboard.tsx?tsr-split",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-CXa5-xVL.js",
+      "_api-BJy07AZB.js"
+    ]
+  },
+  "src/routes/me.tsx?tsr-split": {
+    "file": "assets/me-DIUrFdCx.js",
+    "name": "me",
+    "src": "src/routes/me.tsx?tsr-split",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-CXa5-xVL.js",
+      "_api-BJy07AZB.js",
+      "_StaticBoard-C-VpSCjJ.js",
+      "_skins-COKJgQCr.js"
+    ]
+  },
+  "src/routes/play.$gameId.tsx?tsr-split": {
+    "file": "assets/play._gameId-EVneFHB2.js",
+    "name": "play._gameId",
+    "src": "src/routes/play.$gameId.tsx?tsr-split",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-CXa5-xVL.js",
+      "_api-BJy07AZB.js",
+      "_skins-COKJgQCr.js",
+      "_DifficultyBadge-CAEjew8l.js"
+    ]
+  },
+  "src/routes/play.tsx?tsr-split": {
+    "file": "assets/play-DEJQTbIa.js",
+    "name": "play",
+    "src": "src/routes/play.tsx?tsr-split",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-CXa5-xVL.js",
+      "_api-BJy07AZB.js",
+      "_DifficultyBadge-CAEjew8l.js"
+    ]
+  },
+  "src/routes/shop.tsx?tsr-split": {
+    "file": "assets/shop-CPIAUBaJ.js",
+    "name": "shop",
+    "src": "src/routes/shop.tsx?tsr-split",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-CXa5-xVL.js",
+      "_api-BJy07AZB.js",
+      "_StaticBoard-C-VpSCjJ.js",
+      "_skins-COKJgQCr.js"
+    ]
+  },
+  "virtual:$vinxi/handler/client": {
+    "file": "assets/client-CmiZ3OsA.js",
+    "name": "client",
+    "src": "virtual:$vinxi/handler/client",
+    "isEntry": true,
+    "imports": [
+      "_client-CXa5-xVL.js"
+    ]
+  }
+}

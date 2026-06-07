@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60">
+  <defs>
+    <linearGradient id="marble-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5F5F5"/>
+      <stop offset="50%" stop-color="#E0E0E0"/>
+      <stop offset="100%" stop-color="#BDBDBD"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="60" fill="url(#marble-bg)" rx="4"/>
+  <!-- Marble veins -->
+  <path d="M10 20 Q40 15 70 25 Q90 30 115 22" stroke="#CCCCCC" stroke-width="1" fill="none" opacity="0.7"/>
+  <path d="M5 40 Q35 35 65 45 Q95 50 118 40" stroke="#CCCCCC" stroke-width="0.8" fill="none" opacity="0.5"/>
+  <!-- Red marble piece -->
+  <circle cx="40" cy="25" r="11" fill="#5A0018"/>
+  <circle cx="40" cy="25" r="9" fill="#A01030"/>
+  <ellipse cx="37" cy="21" rx="4" ry="2" fill="rgba(255,180,200,0.35)" transform="rotate(-18,37,21)"/>
+  <!-- Dark marble piece -->
+  <circle cx="80" cy="38" r="11" fill="#080810"/>
+  <circle cx="80" cy="38" r="9" fill="#1A1A35"/>
+  <ellipse cx="77" cy="34" rx="4" ry="2" fill="rgba(180,180,240,0.25)" transform="rotate(-18,77,34)"/>
+  <text x="60" y="57" text-anchor="middle" font-size="6" fill="#5A0018" font-family="sans-serif">Marble Board</text>
+</svg>

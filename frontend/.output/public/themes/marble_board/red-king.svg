@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="marble-red-k" cx="45%" cy="38%" r="65%">
+      <stop offset="0%" stop-color="#E84A6F"/>
+      <stop offset="45%" stop-color="#A01030"/>
+      <stop offset="100%" stop-color="#5A0018"/>
+    </radialGradient>
+    <radialGradient id="gold-crown" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#FFF0A0"/>
+      <stop offset="60%" stop-color="#D4A800"/>
+      <stop offset="100%" stop-color="#8A6800"/>
+    </radialGradient>
+  </defs>
+  <circle cx="32" cy="32" r="28" fill="url(#marble-red-k)" stroke="#3A000F" stroke-width="2.5"/>
+  <ellipse cx="27" cy="24" rx="7" ry="3.5" fill="rgba(255,200,210,0.35)" transform="rotate(-18,27,24)"/>
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#FF8FA8" stroke-width="1.5" opacity="0.5"/>
+  <!-- Elegant marble crown -->
+  <path d="M19 39 L19 27 L25 34 L32 20 L39 34 L45 27 L45 39 Z"
+        fill="url(#gold-crown)" stroke="#8A6800" stroke-width="1.5" stroke-linejoin="round"/>
+  <rect x="18" y="39" width="28" height="4.5" rx="2" fill="url(#gold-crown)" stroke="#8A6800" stroke-width="1"/>
+  <circle cx="25" cy="27" r="2.2" fill="#FFF0A0" stroke="#D4A800" stroke-width="0.8"/>
+  <circle cx="32" cy="22" r="2.8" fill="#FFF0A0" stroke="#D4A800" stroke-width="0.8"/>
+  <circle cx="39" cy="27" r="2.2" fill="#FFF0A0" stroke="#D4A800" stroke-width="0.8"/>
+</svg>

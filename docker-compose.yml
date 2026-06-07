@@ -1,0 +1,86 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: damas-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASS:-secret}
+      MONGO_INITDB_DATABASE: damas
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: damas-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASS:-secret}@mongodb:27017/damas?authSource=admin
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRICE_CLASSIC_WOOD: ${STRIPE_PRICE_CLASSIC_WOOD}
+      STRIPE_PRICE_NEON_GLOW: ${STRIPE_PRICE_NEON_GLOW}
+      STRIPE_PRICE_MARBLE_BOARD: ${STRIPE_PRICE_MARBLE_BOARD}
+      STRIPE_PRICE_VECTOR_CLASSIC: ${STRIPE_PRICE_VECTOR_CLASSIC}
+      STRIPE_PRICE_RETRO_PIXEL: ${STRIPE_PRICE_RETRO_PIXEL}
+      AI_SERVICE_URL: http://ai-service:3002
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bun", "--eval", "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    container_name: damas-ai-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+    healthcheck:
+      test: ["CMD", "bun", "--eval", "fetch('http://localhost:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: damas-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "24678:24678"
+    environment:
+      VITE_CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
+      VITE_API_URL: http://localhost:3001
+    depends_on:
+      backend:
+        condition: service_started
+
+volumes:
+  mongo_data:

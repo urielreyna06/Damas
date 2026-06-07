@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+*.env.local
+bun.lockb
+coverage/
+.DS_Store
+*.js.map

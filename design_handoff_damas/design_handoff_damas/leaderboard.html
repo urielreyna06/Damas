@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Damas — Leaderboard</title>
+<link rel="stylesheet" href="assets/ds.css" />
+<style>
+  .lb-head { margin-bottom: 26px; }
+  .lb-head h1 { font-size: 40px; }
+  .lb-head p { color: var(--muted); margin-top: 6px; font-size: 16px; }
+
+  .tabs { display: inline-flex; padding: 4px; background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px; gap: 4px; margin-bottom: 24px; }
+  .tab { padding: 9px 20px; border-radius: 9px; border: 0; background: transparent; color: var(--muted); font: 600 14px Inter, sans-serif; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: color .18s, background .18s; }
+  .tab .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .tab.active { color: var(--text); background: var(--bg-3); }
+  .tab[data-d="easy"].active .dot { background: var(--green); } .tab[data-d="easy"] .dot { background: var(--green); }
+  .tab[data-d="medium"].active .dot { background: var(--amber); } .tab[data-d="medium"] .dot { background: var(--amber); }
+  .tab[data-d="hard"].active .dot { background: var(--red); } .tab[data-d="hard"] .dot { background: var(--red); }
+
+  .lb-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+  .lb-table thead th { text-align: left; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted-2); font-weight: 600; padding: 0 18px 6px; }
+  .lb-table thead th.num { text-align: right; }
+  .lb-row td { background: var(--bg-1); padding: 15px 18px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); vertical-align: middle; transition: background .15s; }
+  .lb-row td:first-child { border-left: 1px solid var(--line); border-radius: 12px 0 0 12px; }
+  .lb-row td:last-child { border-right: 1px solid var(--line); border-radius: 0 12px 12px 0; }
+  .lb-row:hover td { background: var(--bg-2); }
+  .lb-row.me td { background: var(--gold-soft); border-color: var(--gold-line); }
+  .lb-row.me:hover td { background: rgba(227,178,60,.2); }
+  .td-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+
+  .rank { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; font-weight: 700; font-size: 14px; background: var(--bg-3); color: var(--muted); }
+  .rank.g1 { background: linear-gradient(180deg,#F4CB5E,#C8901F); color: #1a1505; }
+  .rank.g2 { background: linear-gradient(180deg,#D8DBE0,#9AA0AB); color: #1a1a1e; }
+  .rank.g3 { background: linear-gradient(180deg,#D9A36A,#A6703C); color: #1a0f06; }
+  .player-cell { display: flex; align-items: center; gap: 12px; }
+  .p-av { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 12.5px; color: var(--text); background: linear-gradient(135deg,#2b2b34,#16161d); border: 1px solid var(--line-2); flex-shrink: 0; }
+  .p-name { font-weight: 600; white-space: nowrap; }
+  .me-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: var(--gold); background: rgba(227,178,60,.18); padding: 2px 7px; border-radius: 6px; margin-left: 8px; }
+
+  @media (max-width: 680px) {
+    .hide-sm { display: none; }
+    .lb-head h1 { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+  <div id="nav-slot"></div>
+  <main class="page wrap">
+    <div class="lb-head">
+      <span class="eyebrow">Hall of fame</span>
+      <h1 class="serif" style="margin-top:8px;">Leaderboard</h1>
+      <p>Fewest moves to victory, by difficulty. Only clean wins make the board.</p>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-d="easy"><span class="dot"></span>Easy</button>
+      <button class="tab" data-d="medium"><span class="dot"></span>Medium</button>
+      <button class="tab" data-d="hard"><span class="dot"></span>Hard</button>
+    </div>
+
+    <table class="lb-table">
+      <thead>
+        <tr>
+          <th style="width:60px;">Rank</th>
+          <th>Player</th>
+          <th class="num">Moves</th>
+          <th class="num hide-sm">Duration</th>
+          <th class="num hide-sm">Date</th>
+        </tr>
+      </thead>
+      <tbody id="lb-body"></tbody>
+    </table>
+  </main>
+
+  <script src="assets/shared.js"></script>
+  <script>
+    Store.mountNav('leaderboard');
+    const me = Store.user();
+    const initials = n => n.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+
+    const NAMES = ['Mira Petrov','Sora Tanaka','Diego Vela','Noor Haddad','Lena Brandt',
+      'Kwame Osei','Ines Marchetti','Yusuf Demir','Clara Nyström','Tariq Aziz',
+      'Hana Kovač','Bruno Salas','Ada Eze','Felix Wenger','Priya Nair','Otto Lindqvist'];
+
+    function gen(diff) {
+      // fewer moves = better; hard requires more moves on average
+      const base = { easy: 11, medium: 16, hard: 23 }[diff];
+      const rows = [];
+      const pool = [...NAMES].sort(() => Math.random() - 0.5);
+      for (let i = 0; i < 12; i++) {
+        const moves = base + i * 2 + Math.floor(Math.random() * 3);
+        const secs = moves * (4 + Math.floor(Math.random() * 5));
+        const dur = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+        const d = new Date(Date.now() - (i * 1.7 + Math.random() * 2) * 86400000);
+        rows.push({ name: pool[i % pool.length], moves, dur,
+          date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) });
+      }
+      // insert the current user
+      const mePos = { easy: 3, medium: 5, hard: 8 }[diff];
+      rows[mePos] = { name: me.name, moves: rows[mePos].moves, dur: rows[mePos].dur, date: 'Today', me: true };
+      return rows;
+    }
+
+    function render(diff) {
+      const rows = gen(diff);
+      const body = document.getElementById('lb-body');
+      body.innerHTML = '';
+      rows.forEach((r, i) => {
+        const rank = i + 1;
+        const tr = document.createElement('tr');
+        tr.className = 'lb-row' + (r.me ? ' me' : '');
+        const rankCls = rank <= 3 ? ' g' + rank : '';
+        const medal = rank === 1 ? '♔' : rank;
+        tr.innerHTML = `
+          <td><span class="rank${rankCls}">${medal}</span></td>
+          <td>
+            <span class="player-cell">
+              <span class="p-av">${initials(r.name)}</span>
+              <span class="p-name">${r.name}</span>
+              ${r.me ? '<span class="me-tag">YOU</span>' : ''}
+            </span>
+          </td>
+          <td class="td-num">${r.moves}</td>
+          <td class="td-num hide-sm">${r.dur}</td>
+          <td class="td-num hide-sm muted">${r.date}</td>`;
+        body.appendChild(tr);
+      });
+    }
+
+    const tabs = document.getElementById('tabs');
+    tabs.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+      tabs.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      render(t.getAttribute('data-d'));
+    }));
+    render('easy');
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="marble-dark" cx="45%" cy="38%" r="65%">
+      <stop offset="0%" stop-color="#3A3A5A"/>
+      <stop offset="50%" stop-color="#1A1A35"/>
+      <stop offset="100%" stop-color="#080810"/>
+    </radialGradient>
+    <filter id="marble-texture-d">
+      <feTurbulence type="turbulence" baseFrequency="0.04 0.08" numOctaves="4" seed="12" result="noise"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.7  0 0 0 0 0.7  0 0 0 0 1  0 0 0 0.2 0" result="colored"/>
+      <feBlend in="SourceGraphic" in2="colored" mode="overlay"/>
+    </filter>
+  </defs>
+  <circle cx="32" cy="32" r="28" fill="url(#marble-dark)" stroke="#04040A" stroke-width="2.5"/>
+  <circle cx="32" cy="32" r="28" fill="url(#marble-dark)" filter="url(#marble-texture-d)"/>
+  <ellipse cx="27" cy="24" rx="7" ry="3.5" fill="rgba(180,180,240,0.25)" transform="rotate(-18,27,24)"/>
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#9090CC" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="32" cy="32" r="20" fill="none" stroke="#9090CC" stroke-width="0.8" opacity="0.3"/>
+</svg>
