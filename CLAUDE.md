@@ -286,6 +286,13 @@ cd frontend   && bun run dev   # puerto 3000
   `await constructEventAsync(...)`, NO `constructEvent` (sync). El `SubtleCryptoProvider` de Stripe
   bajo Bun solo computa HMAC async; el sync lanza excepción → toda firma válida cae como
   `400 INVALID_SIGNATURE` y los desbloqueos de skin (CA-17) se pierden en silencio.
+- **`getToken` de Clerk NUNCA en deps de useCallback/useEffect (CRÍTICO):** La función
+  `getToken` de `useAuth()` puede cambiar de referencia entre renders (especialmente durante
+  inicialización y token-refresh de Clerk). Incluirla en `[…, getToken]` recrea el callback
+  en cada render → el `useEffect` dependiente refirma → múltiples fetches concurrentes y
+  race conditions → puede causar `loading=true` infinito. Patrón correcto: llamar `await getToken()`
+  *dentro* del callback al momento de invocar (no capturarla). Añadir comentario
+  `// eslint-disable-next-line react-hooks/exhaustive-deps` para silenciar el linter.
 
 ---
 
