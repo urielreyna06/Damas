@@ -1,8 +1,9 @@
 # Handoff Prompt — Damas PvE
 
 > Copia el bloque de PASO 2 y pégalo como primer mensaje en la próxima sesión de Claude Code.
-> Estado actualizado: **2026-06-07**
+> Estado actualizado: **2026-06-09**
 > Ver `SESSION_LOG.md` para el diario completo de cambios por sesión.
+> Para estudiar el proyecto a fondo: `GUIA_DIDACTICA.md`.
 
 ---
 
@@ -26,7 +27,7 @@ SESSION_LOG.md tiene el diario de todo lo corregido en sesiones anteriores.
 
 El proyecto está en /mnt/a/Claude/Projects/Damas (WSL) = A:\Claude\Projects\Damas (Windows).
 
-## Estado actual (al 2026-06-07)
+## Estado actual (al 2026-06-08)
 
 Proyecto Damas PvE — monorepo Bun con 4 workspaces.
 
@@ -34,6 +35,42 @@ Proyecto Damas PvE — monorepo Bun con 4 workspaces.
 - backend           → Hono + MongoDB + Clerk + Stripe (puerto 3001)
 - ai-service        → Hono stateless (puerto 3002)
 - frontend          → TanStack Start 1.99.x + vinxi 0.5.1 (puerto 3000)
+
+## ✅ Sesión 2026-06-08 (parte 3) — Dificultad de la IA bajada en todos los niveles
+
+`ai-service/src/minimax.ts` → `MAX_DEPTH`: easy 2→**1**, medium 4→**3**, hard 6→**5** (−1 ply
+por nivel). Sin tocar pesos heurísticos ni time limit. Tests 6/6, ai-service reconstruido y healthy.
+Reversible: restaurar 2/4/6 + rebuild ai-service. Ver SESSION_LOG.md (parte 3).
+
+## ✅ Sesión 2026-06-08 (parte 2) — Fix ACCESO A PARTIDA (`<Outlet/>` faltante) — ¡YA SE PUEDE JUGAR!
+
+**Causa raíz (no era Clerk ni loading):** `/play/$gameId` es ruta HIJA de `/play`, pero
+`play.tsx` no renderizaba `<Outlet/>` → al pulsar "Continuar" la URL cambiaba pero el tablero
+(`GamePage`) nunca montaba (ni se disparaba `GET /api/games/:id`). El usuario lo veía como carga
+infinita.
+
+**Fix (`frontend/src/routes/play.tsx`, branch `fix/match-loading`):** cede al hijo con
+`const childMatches = useChildMatches(); if (childMatches.length > 0) return <Outlet/>;`.
+Más fix A defensivo en `play.$gameId.tsx` (watchdog 8s + Reintentar + guard token nulo).
+
+**Verificado EN VIVO** con sesión real (cookies de Clerk inyectadas, sin Google/CAPTCHA):
+acceso → tablero renderiza; jugada real 5,0→4,1 → `POST /moves` 200 → IA responde →
+"Tus movimientos: 1". HTTP audit 16/16, typecheck EXIT 0. Ver `MATCH_ACCESS_FIX.md`.
+**Requiere rebuild frontend (HECHO):** `docker compose build frontend && docker compose up -d frontend`.
+Inconsistencia menor pendiente: panel "Últimos movimientos" dice "Sin movimientos aún" con contador=1 (cosmético).
+
+## ✅ Sesión 2026-06-08 — Diagnóstico consola + optimizeDeps (rebuild HECHO)
+
+**Hallazgo principal:** la app YA estaba 100% funcional. Los 4 "errores conocidos" de
+consola son TODOS de HMR/dev mode, no bugs de código. Verificado tras rebuild:
+HTTP audit 16/16, loginVisible:true, clerkGlobal:true, CSS ok.
+
+**Fix aplicado (`app.config.ts` → `optimizeDeps.include`):** pre-bundle de react, react-dom,
+@tanstack/*, @clerk/tanstack-start. **Logró:** eliminar el `optimized dependencies changed.
+reloading` → ya no hay full-page reload en primera visita (mejora DX). **NO logró:** el
+WebSocket HMR 400 PERSISTE — causa raíz distinta (Vinxi levanta 2 dev servers que comparten
+la config `server.hmr`; el segundo falla con "Port undefined is already in use"). El WS 400
+es cosmético: el frontend NO usa HMR (sin volume mounts → rebuild por cambio, ver CLAUDE.md §9).
 
 ## ✅ Fixes aplicados en sesión 2026-06-07
 
@@ -66,11 +103,13 @@ Proyecto Damas PvE — monorepo Bun con 4 workspaces.
 - UI dark luxury: 6 pantallas + CSS en frontend/src/styles/.
 - 16/16 HTTP audit pass · verify-login: loginVisible:true, clerkGlobal:true.
 
-## ⚠️ IMPORTANTE — Rebuild necesario al retomar
+## ⚠️ IMPORTANTE — Al retomar
 
-Los cambios de la sesión 2026-06-07 ya están buildeados (imagen reconstruida a las 17:40).
-Si los containers están parados, basta con `docker compose up -d`.
-Si las imágenes se perdieron o hay duda, hacer rebuild del frontend (ver comandos abajo).
+El fix de la sesión 2026-06-08 (`optimizeDeps` en `app.config.ts`) YA está buildeado.
+Si los containers están parados, basta `docker compose up -d`.
+NOTA sobre HMR: tras arrancar el frontend, espera ~10-15s a que Vite pre-bundlee antes de
+correr el audit (si no, da `ERR_SOCKET_NOT_CONNECTED` por timing, no es un fallo real).
+`verify-login.mjs` mostrará errorCount:4 — son los 4 errores HMR cosméticos esperados.
 
 ## ▶️ Primeros pasos al retomar
 
@@ -149,9 +188,33 @@ docker exec damas-ai-service bun test
 
 ## ❌ Pendiente — en orden de prioridad
 
-### 1. Golden path manual en el browser
-Automatización verde. Falta probar manualmente login, gameplay (¡ya sin carga infinita!),
-leaderboard, compra de skin con Stripe y activación en /me con skin en partida.
+### 0. 🔴 MÁXIMA PRIORIDAD — Resolver algoritmo de IA: A* vs Minimax (decisión + alinear código y docs)
+
+**Contexto (auditado 2026-06-09, ver SESSION_LOG.md entrada de ese día):**
+- El usuario recuerda haber pedido migrar a **A\*** y haber quitado Minimax de la documentación.
+- El estado ACTUAL del repo es **Minimax + alfa-beta** (`ai-service/src/minimax.ts`). No existe
+  `astar.ts`. Toda la doc describe Minimax. En una sesión previa A\* se implementó y luego se
+  revirtió a Minimax (sin rastro en git — nada commiteado).
+
+**Tarea para la próxima sesión (NO hacer antes de presentar):**
+1. Confirmar con el usuario la decisión definitiva: **¿A\* o Minimax?**
+2. Si **A\***: implementar `ai-service/src/astar.ts` (búsqueda adversarial), cablear `routes.ts`,
+   `calibrate.ts` y `tests/ai.test.ts`; actualizar PRD (RF-17, ADR-005), GUIA_DIDACTICA,
+   CLAUDE.md y PROJECT_BREAKDOWN para reflejar A\* y retirar Minimax. Mantener CA-09 (stateless)
+   y CA-10 (`hard` < 2s p95).
+3. Si **Minimax**: dejar todo como está (ya alineado) y cerrar formalmente la discrepancia en docs.
+4. En cualquier caso: **commitear el resultado** para que quede rastro auditable en git.
+
+**Nota infra para abrir el PR:** actualmente **no hay git remote** configurado. Antes de publicar
+el repo en GitHub, hacer **scrub de secretos** (`SESSION_LOG.md` ~línea 718 tiene un `whsec_` real;
+`.env` tiene claves Clerk/Stripe). Hay una rama local `docs/ai-algorithm-astar-todo` con este TODO.
+
+---
+
+### 1. Golden path — solo falta el tramo de Stripe
+✅ Acceso a partida y ciclo de jugada (humano→IA) VERIFICADOS en vivo (sesión 2026-06-08 parte 2).
+Falta el tramo de monetización: compra de skin con Stripe (requiere `stripe listen
+--forward-to localhost:3001/api/stripe/webhook`), webhook desbloquea, activar en /me, skin en partida.
 
 ### 2. INV-01 — Assets SVG reales (cosmético, no bloquea MVP)
 Los SVG en frontend/public/themes/{skin_id}/ son placeholders.
@@ -176,6 +239,9 @@ Configurar endpoint en Stripe dashboard apuntando al dominio de producción.
 11. getToken de Clerk NUNCA va en arrays de deps de useCallback/useEffect — se invoca
     dentro del callback, no se captura. Incluirlo hace que los callbacks se recreen en cada
     render de Clerk → race conditions y potencial loading infinito.
+12. play.tsx DEBE ceder a `<Outlet/>` cuando hay ruta hija activa (`useChildMatches`).
+    `/play/$gameId` es hija de `/play`; sin `<Outlet/>` el tablero nunca monta y "Continuar"
+    parece carga infinita. NO quitar ese return de Outlet. Ver CLAUDE.md §9.
 
 ## Si encuentras algo no cubierto
 

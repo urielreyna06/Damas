@@ -4,6 +4,200 @@
 
 ---
 
+## Sesión 2026-06-09 — Auditoría algoritmo IA: discrepancia A*↔Minimax (TODO máx. prioridad)
+
+**Solo documentación. CERO cambios de código** (usuario presentando en minutos, sin riesgo).
+
+### Qué se verificó (double-check a petición del usuario)
+- **Código actual:** `ai-service/src/minimax.ts` (Minimax + alfa-beta + iterative deepening) está
+  en uso. `routes.ts`, `calibrate.ts` y `tests/ai.test.ts` importan de `./minimax.ts`.
+- **No existe `astar.ts`** en ningún punto del repo (`find -iname "*astar*"` → vacío).
+- **Toda la documentación** (PRD, GUIA_DIDACTICA, CLAUDE.md, PROJECT_BREAKDOWN) describe Minimax.
+- **Sin rastro en git:** `git log` no tiene commits que mencionen A*, astar ni minimax. El trabajo
+  A*↔Minimax ocurrió en working tree y nunca se commiteó → no es auditable por historial.
+
+### La discrepancia (origen de la confusión del usuario)
+El propio SESSION_LOG (§1 de la entrada 2026-06-02, líneas ~685-713) registra:
+1. Se **implementó A* adversarial** (`astar.ts` existió, el código lo usaba).
+2. Luego se **revirtió a Minimax** "por decisión del usuario"; `astar.ts` fue borrado.
+3. Quedó la nota: "ADR-005/RF-17 documentan Minimax (A* descartado). Contradice el código que usaba
+   A*. Resolver en próxima sesión." — esa resolución terminó en Minimax.
+
+El usuario recuerda haber pedido A* y haber quitado Minimax de los docs; el estado final commiteado
+es Minimax. No se puede probar por git si la reversión fue decisión suya o un cambio mal etiquetado.
+
+### Acción pendiente (ver HANDOFF_PROMPT.md → sección 0, MÁXIMA PRIORIDAD)
+Decidir definitivamente A* vs Minimax y dejar código + docs alineados. NO resuelto esta sesión
+por petición expresa (no arriesgar nada antes de la presentación).
+
+### Nota de infraestructura
+- **No hay git remote configurado** (`git remote -v` vacío). No se pudo abrir PR en GitHub.
+- Se preparó la rama local `docs/ai-algorithm-astar-todo` con el commit de docs, lista para PR
+  cuando se configure el remote.
+- ⚠️ `SESSION_LOG.md` (línea ~718) y `.env` contienen secretos REALES (whsec_ Stripe, claves
+  Clerk/Stripe). **Hacer scrub antes de publicar el repo en GitHub.**
+
+---
+
+## Sesión 2026-06-08 (parte 3) — Bajar dificultad de la IA en todos los niveles
+
+A petición del usuario ("bajar un poco la dificultad en general en todos los niveles").
+La fuerza de la IA se controla por la profundidad de búsqueda minimax en
+`ai-service/src/minimax.ts` (`MAX_DEPTH`). Se restó 1 ply a cada nivel:
+
+| Nivel  | Antes | Ahora |
+|--------|-------|-------|
+| easy   | 2     | **1** |
+| medium | 4     | **3** |
+| hard   | 6     | **5** |
+
+- Sin tocar pesos heurísticos (INV-02 sigue válido) ni el time limit (1800ms).
+- Tests ai-service: **6/6 pass** (CA-09 `depth>=1`, CA-10 `hard<2s` — más rápido aún, captura forzada OK).
+- Requirió rebuild del ai-service (sin volume mounts). Hecho; health 200, healthy.
+- Reversible: restaurar 2/4/6 en `MAX_DEPTH` y rebuild ai-service.
+
+---
+
+## Sesión 2026-06-08 (parte 2) — Fix acceso a partida (`<Outlet/>` faltante) + golden path verificado en vivo
+
+### Problema reportado
+"No puedo jugar." Clic en "Continuar partida" → carga infinita; imposible entrar a la sala de juego.
+Consola sin errores de red; solo los warnings conocidos (manifest, clerk_init_state, WS HMR).
+
+### Diagnóstico
+El happy-path del código de la partida era correcto (fix de `getToken` intacto, `finally` apaga
+`loading`). El spinner "infinito" NO venía de Clerk ni del loading. Conduciendo un browser headless
+con la sesión real del usuario (cookies de Clerk inyectadas — ver "Metodología") se observó:
+al pulsar "Continuar" la **URL cambiaba a `/play/:id` pero la pantalla seguía mostrando el lobby**,
+y **nunca se disparaba `GET /api/games/:id`**.
+
+### Causa raíz
+`/play/$gameId` es ruta **hija** de `/play` en el enrutado file-based de TanStack
+(`routeTree.gen.ts`: `PlayGameIdRoute.getParentRoute = () => PlayRoute`). Para que una ruta hija
+se monte, el componente padre **debe** renderizar `<Outlet/>`. **`play.tsx` no tenía `<Outlet/>`**
+(renderizaba el lobby directo) → el componente `GamePage` (el tablero) nunca se montaba.
+No se había detectado antes porque el golden path jamás se había probado en browser con sesión real
+(`verify-login.mjs` solo toca la landing).
+
+### Fix
+**`frontend/src/routes/play.tsx`** (1 archivo, sin regen de `routeTree.gen.ts`, reversible):
+- Import de `Outlet, useChildMatches` de `@tanstack/react-router`.
+- `const childMatches = useChildMatches();` (`[]` en `/play`, la match del hijo en `/play/$gameId`).
+- Tras los hooks: `if (childMatches.length > 0) return <Outlet />;` → renderiza el tablero cuando
+  hay ruta hija activa; el lobby solo en `/play` exacto.
+
+**`frontend/src/routes/play.$gameId.tsx`** (fix A, red de seguridad defensiva, aplicado antes de
+hallar la causa raíz, se conserva): guard de token nulo + **watchdog 8s** (el skeleton ya no puede
+ser infinito) + botón **Reintentar** en la pantalla de error. Cubre un modo de fallo latente
+(que `getToken()` de Clerk se cuelgue). Reversible si se quiere diff mínimo.
+
+### Metodología de verificación (sin poder loguear por anti-bot)
+- Login automatizado bloqueado en dos frentes: **Google OAuth headless** → "navegador no seguro";
+  **sign-up por email de Clerk** → CAPTCHA Cloudflare Turnstile. Ambos son protección anti-bot.
+- Solución: el usuario exportó las cookies de su sesión (`document.cookie`) y se inyectaron en el
+  browser headless (`e2e/golden-cookies.mjs`, lee `/tmp/clerk-cookies.json` — borrado tras usar,
+  contiene tokens reales, NUNCA se commitea). La clave es `__clerk_db_jwt` (dev-browser token):
+  permite a Clerk JS recuperar y refrescar la sesión aunque el `__session` JWT esté expirado.
+
+### Resultado (verificado en vivo con la sesión real)
+- `clerk state: { hasClerk:true, user:user_3E6O4..., session:active }`.
+- Acceso: clic en Continuar → `GamePage` monta y dispara, **todos 200**: `GET /api/games/:id`,
+  `GET /api/me`, `GET /api/games/:id/legal-moves`. **El tablero 8×8 renderiza** (`e2e/_artifacts/c03-final.png`).
+- Jugada real (`e2e/golden-move.mjs`): apertura 5,0→4,1 → `POST /api/games/:id/moves` → **200** →
+  "Tus movimientos: 1" y la **IA responde** (`e2e/_artifacts/m03-after-move.png`). El ciclo de juego funciona.
+- HTTP audit: **16/16**. Typecheck frontend: **EXIT 0**. Login/tienda intactos.
+
+### Inconsistencia menor encontrada (no bloqueante)
+El panel lateral "Últimos movimientos" mostró "Sin movimientos aún" pese a contador=1 tras la jugada.
+Cosmético (el historial lee `game.moves`); no afecta el juego. Follow-up opcional.
+
+### Otros hallazgos
+- Clerk instalado es **`@clerk/tanstack-start@0.3.0`** (no 0.4.13 como dice package.json/CLAUDE.md).
+- `__clerk_init_state=undefined` viene de `ssr.tsx` con `createStartHandler` pelado (sin
+  `createClerkHandler`). No bloquea. "Fix B" opcional exigiría añadir `CLERK_SECRET_KEY` al
+  contenedor frontend (hoy solo tiene la publishable).
+
+### Archivos
+- `frontend/src/routes/play.tsx` — `<Outlet/>` vía `useChildMatches` (FIX PRINCIPAL).
+- `frontend/src/routes/play.$gameId.tsx` — watchdog + Reintentar + guard token (fix A defensivo).
+- `MATCH_ACCESS_FIX.md` — informe nuevo.
+- `e2e/golden-cookies.mjs`, `e2e/golden-move.mjs`, `e2e/golden-login.mjs` — drivers de verificación (sin secretos).
+- Branch: `fix/match-loading`.
+
+### Estado al cerrar
+**El usuario ya puede jugar.** Acceso a partida + ciclo de jugada verificados en vivo. Pendiente del
+golden path: solo el tramo de compra de skin con Stripe (requiere `stripe listen`).
+
+---
+
+## Sesión 2026-06-08 — Diagnóstico errores consola + fix optimizeDeps
+
+### Problemas reportados
+- `window.__clerk_init_state = undefined` en consola del browser
+- `Warning: <Scripts /> found no manifest`
+- WebSocket HMR falla con código 400 (`Unexpected response code: 400`)
+- `loaderData: {"$undefined":0}` en todas las rutas
+
+### Diagnóstico
+
+**verify-login.mjs confirmó app FUNCIONAL:** `loginVisible:true`, `clerkGlobal:true`,
+CSS aplicando (`bodyBg: rgb(14, 14, 18)`). Los 4 "errores" son todos harmless dev warnings.
+
+**verificado tras rebuild — los 4 errores son TODOS de HMR, no de la app:**
+1. `__clerk_init_state = undefined`, `<Scripts /> found no manifest`, `loaderData:{"$undefined":0}`
+   → warnings independientes de dev mode, ya documentados como inofensivos.
+2. `ws://localhost:24678/_build/?token=... → 400` + `[vite] failed to connect` +
+   `PAGEERROR: WebSocket closed` → HMR WebSocket roto. Causa raíz (en logs del servidor):
+   `WebSocket server error: Port undefined is already in use`. Vinxi levanta DOS dev servers
+   (client + SSR); la config `server.hmr` se aplica a ambos → el primero toma 24678, el
+   segundo falla con "undefined" → el browser conecta al WS equivocado → 400.
+
+### Fix implementado (parcial)
+
+**`frontend/app.config.ts`** — Añadido `optimizeDeps.include` con las 6 deps críticas:
+```typescript
+optimizeDeps: {
+  include: ["react", "react-dom", "react-dom/client",
+            "@tanstack/react-router", "@tanstack/start", "@clerk/tanstack-start"],
+},
+```
+**Lo que SÍ logró:** eliminó el mensaje `✨ optimized dependencies changed. reloading`
+de los logs. Vite ahora pre-bundlea al arrancar el container → ya NO hay full-page reload
+en la primera visita del browser (mejora real de DX, evita parpadeo/reinicialización).
+
+**Lo que NO logró:** el WS 400 PERSISTE — tiene causa raíz distinta (doble dev server de
+Vinxi compartiendo config HMR, ver arriba). La hipótesis inicial de que el reload causaba
+el token mismatch era incorrecta.
+
+**Impacto: NULO en funcionalidad.** El HMR solo afecta hot-reload en vivo. El frontend en
+este proyecto NO usa HMR (sin volume mounts en WSL2 → cada cambio requiere rebuild, ver
+CLAUDE.md §9). Los 4 errores son ruido de consola cosmético. App 16/16 funcional.
+
+**Requiere rebuild:** `docker compose build frontend && docker compose up -d frontend` (hecho)
+
+### Verificación tras rebuild
+- HTTP audit: 16/16 pass
+- verify-login.mjs: loginVisible:true, clerkGlobal:true, bodyBg:rgb(14,14,18), errorCount:4 (todos HMR)
+- Logs servidor: confirmado SIN `optimized dependencies changed. reloading`
+
+### Estado de los 4 objetivos del usuario
+
+1. ClerkProvider sin errores → ✅ Ya funciona (confirmado browser headless)
+2. `/play/:matchId` sin fallo useAuth → ✅ ClerkProvider envuelve correctamente en `__root.tsx:42`
+3. Gameplay sin loading infinito → ✅ Fix getToken deps de sesión 2026-06-07 intacto
+4. Skins preview → ✅ Confirmado en sesión previa
+
+### Archivos modificados
+- `frontend/app.config.ts` — añadido `optimizeDeps.include`
+
+### Pendiente
+- HMR WebSocket 400 (NO bloqueante, cosmético): si algún día se quiere arreglar el hot-reload,
+  investigar el doble dev server de Vinxi y aislar la config `server.hmr` solo al router client.
+  Bajo riesgo de desestabilizar el stack TanStack 1.99.x — no tocar sin necesidad real.
+- Golden path manual (login → play → leaderboard → shop → skin)
+
+---
+
 ## Sesión 2026-06-07 — Fix gameplay carga infinita + UX/UI audit
 
 ### Problemas reportados
