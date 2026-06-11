@@ -118,12 +118,14 @@
   function saveGames(g) { write(LS.games, g); }
   function getGame(id) { return games()[id] || null; }
   function newId() { return 'g' + Math.random().toString(36).slice(2, 8); }
-  function createGame(difficulty) {
+  function createGame(difficulty, rulesKey) {
     const g = games();
     const id = newId();
+    const rk    = rulesKey || 'english';
+    const rules = global.Damas.RULES[rk] || global.Damas.RULES.english;
     g[id] = {
-      id, difficulty, status: 'in_progress', toMove: 'human',
-      board: global.Damas.initialBoard(), history: [],
+      id, difficulty, rulesKey: rk, status: 'in_progress', toMove: 'human',
+      board: global.Damas.initialBoard(rules), history: [],
       createdAt: Date.now(), updatedAt: Date.now(), moveCount: 0,
     };
     saveGames(g);
@@ -183,26 +185,29 @@
   /* ---- static (non-interactive) board renderer for previews ---- */
   function renderStaticBoard(el, opts) {
     opts = opts || {};
-    const skin = opts.skin || 'emerald';
+    const skin   = opts.skin   || 'emerald';
     const finish = opts.finish || 'glossy';
-    const board = opts.board || global.Damas.initialBoard();
+    const rules  = opts.rules  || global.Damas.RULES.english;
+    const S      = rules.boardSize;
+    const board  = opts.board  || global.Damas.initialBoard(rules);
     el.classList.add('board');
     if (opts.mini) el.classList.add('mini');
+    el.setAttribute('data-size', S);
     el.innerHTML = '';
     const sq = document.createElement('div'); sq.className = 'squares';
-    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    for (let r = 0; r < S; r++) for (let c = 0; c < S; c++) {
       const d = document.createElement('div');
       d.className = 'sq ' + (global.Damas.isDark(r, c) ? 'dark' : 'light');
       sq.appendChild(d);
     }
     el.appendChild(sq);
     const pl = document.createElement('div'); pl.className = 'pieces';
-    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    for (let r = 0; r < S; r++) for (let c = 0; c < S; c++) {
       const p = board[r][c]; if (!p) continue;
       const pc = document.createElement('div');
       pc.className = 'piece ' + p.player + (p.king ? ' king' : '');
       pc.dataset.finish = finish;
-      pc.style.top = (r / 8 * 100) + '%'; pc.style.left = (c / 8 * 100) + '%';
+      pc.style.top = (r / S * 100) + '%'; pc.style.left = (c / S * 100) + '%';
       const disc = document.createElement('span'); disc.className = 'disc';
       if (p.king) { const cr = document.createElement('span'); cr.className = 'crown'; cr.textContent = '♔'; disc.appendChild(cr); }
       pc.appendChild(disc); pl.appendChild(pc);
