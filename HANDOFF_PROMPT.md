@@ -188,57 +188,20 @@ docker exec damas-ai-service bun test
 
 ## ❌ Pendiente — en orden de prioridad
 
-### 0. 🔴 MÁXIMA PRIORIDAD — Overhaul webapp standalone (damas.zip → design_handoff_damas/)
+### 0. ✅ COMPLETADO (2026-06-11) — Overhaul webapp standalone
 
-**Contexto (auditado 2026-06-11, ver SESSION_LOG.md entrada de ese día):**
-Webapp standalone puro (HTML/CSS/JSX, CDN React 18 + Babel, sin build step).
-Análisis COMPLETO. **CERO código escrito.** Listo para implementar.
+**Commit:** `d1f254d` (branch `feature/damas-overhaul`)
+**Archivos:** engine.js, game.jsx, shared.js, board.css, play.html (+477 / −233 líneas)
 
-**Rama de trabajo:** `feature/damas-overhaul` (existe localmente).
-**Archivos fuente:** `/tmp/damas_extract/assets/` (extraídos de `damas.zip` en raíz del repo).
-**Destino final:** `design_handoff_damas/design_handoff_damas/` (reemplazar archivos viejos, sin duplicados).
-
-**Features a implementar (en este orden):**
-
-**Fase 1 — `assets/engine.js` (ESCRIBIR PRIMERO — todo depende de esto)**
-- Presets `RULES = { english, spanish, international }` con campos `key` y `label`
-  ```
-  english:       { boardSize:8,  menCaptureBackward:false, flyingKings:false, forceMaximumCapture:false, promoteDuringCapture:false }
-  spanish:       { boardSize:8,  menCaptureBackward:true,  flyingKings:true,  forceMaximumCapture:true,  promoteDuringCapture:true  }
-  international: { boardSize:10, menCaptureBackward:true,  flyingKings:true,  forceMaximumCapture:true,  promoteDuringCapture:false }
-  ```
-- Todos los métodos aceptan `rules` (fallback `RULES.english`); `SIZE` global → `rules.boardSize`
-- Damas voladoras: scan multi-casilla + `capturedSet` Set para ghost-blocking en cadenas
-- `promoteDuringCapture`: Españolas corona a mitad de cadena, continúa como dama voladora
-- `forceMaximumCapture`: filtrar solo movimientos con más capturas del set
-- 10×10: `initialBoard` pone 4 filas de piezas por lado (20 piezas)
-- `aStarGreedy(b, rules)`: 1-ply best-first usando `evaluate()`, tiebreak random
-- Remapear `aiMove`: easy=random, medium=aStarGreedy, hard=minimax-d3, expert=minimax+AB-d4
-- Exportar `RULES` en `global.Damas`
-
-**Fase 2 — `play.html`**
-- 4ª tarjeta dificultad: Expert / "Guardián Ancestral"; grid `repeat(4,1fr)`
-- Selector de 3 reglamentos (antes de iniciar): Inglesas / Españolas / Internacionales
-- Handler `start-btn` pasa `Store.createGame(selectedDiff, selectedRules)`
-
-**Fase 3 — `assets/shared.js`**
-- `createGame(difficulty, rulesKey)` → `initialBoard(D.RULES[rulesKey])` + `rules:{...R,key:rk}`
-- `renderStaticBoard` usa tamaño del board dinámicamente
-
-**Fase 4 — `assets/game.jsx`**
-- `boardSize` de `game.rules || D.RULES.english`; `ALL_FILES` sliced; `sqName` dinámico
-- `piecesFromBoard/boardFromPieces` usan `boardSize`; `data-size={boardSize}` en Board
-- Todos los `D.*` calls reciben `gameRules`; expert en `diffMeta`
-- `capByHuman/capByAi`: `boardSize===10?20:12`; promote row: `gameRules.boardSize-1`
-- Bitácora: `gameStartRef+bitacoraRef` → acumular en `playMove` → botón "Exportar bitácora" en EndModal
-- Coords dinámicos (ranks array de `boardSize`)
-
-**Fase 5 — `assets/board.css`**
-- `[data-size="10"] .squares`: `repeat(10,1fr)`; `[data-size="10"] .piece`: `10%`
-
-**Reglas IP (nunca romper):**
-- El motor y el sistema son originales. El arte de personajes lo aporta el usuario como archivos.
-- NO generar ni dibujar personajes con copyright. NO generar los PNG.
+- **Fase 1 engine.js:** RULES preset (english/spanish/international), boardSize 8/10,
+  damas voladoras, forceMaximumCapture, promoteDuringCapture, aStarGreedy,
+  aiMove remapeado (easy=random, medium=aStarGreedy, hard=minimax-d3, expert=minimax-d4).
+- **Fase 2 play.html:** 4ª tarjeta Expert "Guardián Ancestral", selector de variante
+  (Inglesas/Españolas/Internacional 10×10), handler wired a Store.createGame.
+- **Fase 3 shared.js:** createGame(difficulty, rulesKey), renderStaticBoard dinámico.
+- **Fase 4 game.jsx:** Board/Piece S=rules.boardSize, sqName y coords dinámicos
+  (FILES[0..9] para 10×10), diffMeta expert, bitácora acumulada en playMove + exportar .txt.
+- **Fase 5 board.css:** repeat(10,1fr) y piece 10% para data-size="10".
 
 ---
 

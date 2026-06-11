@@ -4,9 +4,9 @@
 
 ---
 
-## Sesión 2026-06-11 — Análisis + planificación: overhaul webapp standalone (damas.zip)
+## Sesión 2026-06-11 — Overhaul completo webapp standalone (multi-ruleset, 10×10, Expert)
 
-**Solo análisis/diseño. CERO cambios de código.**
+**Análisis + implementación completa de las 5 fases. Commit: `d1f254d`.**
 
 ### Scope
 Webapp standalone de damas (HTML/CSS/JSX puro, sin build step, CDN React 18 + Babel).
@@ -79,6 +79,18 @@ Rama de trabajo: `feature/damas-overhaul` (ya existe localmente).
 - `promoteDuringCapture` (Españolas) corona a mitad de cadena y la pieza continúa como dama voladora
 - `game.jsx:89` → `D.legalMoves(board, 'human')` sin rules — TODOS los call-sites necesitan el param
 - Compatibilidad retroactiva: juegos viejos en localStorage no tienen `rules` → fallback `D.RULES.english`
+
+### Implementación completada (misma sesión, tras crash y reorientación)
+
+| Fase | Archivo | Estado | Cambios clave |
+|------|---------|--------|---------------|
+| 1 | `engine.js` | ✅ | RULES preset, boardSize 8/10, damas voladoras, aStarGreedy, aiMove remapeado |
+| 2 | `play.html` | ✅ | 4ª tarjeta Expert, selector 3 variantes, handler wired |
+| 3 | `shared.js` | ✅ | createGame(diff, rulesKey), renderStaticBoard dinámico |
+| 4 | `game.jsx` | ✅ | S=boardSize en todo, coords dinámicos, diffMeta expert, bitácora + exportar .txt |
+| 5 | `board.css` | ✅ | repeat(10,1fr) y piece 10% para data-size="10" |
+
+**Archivos modificados:** 5 (+477 / −233 líneas). **Commit:** `d1f254d`.
 
 ---
 
