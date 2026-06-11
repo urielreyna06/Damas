@@ -49,7 +49,7 @@ export interface MoveRecord {
 // Partida
 // ============================================================
 
-export type Difficulty = "easy" | "medium" | "hard";
+export type Difficulty = "easy" | "medium" | "hard" | "expert";
 
 export type GameStatus =
   | "in_progress"

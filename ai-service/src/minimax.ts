@@ -11,10 +11,13 @@ export interface MinimaxResult {
   depth: number;
 }
 
+// Search depth = AI strength. Lowered by 1 ply per level (2026-06-08) to make all
+// difficulties a bit easier overall. Previous: easy 2 / medium 4 / hard 6.
 const MAX_DEPTH: Record<Difficulty, number> = {
-  easy: 2,
-  medium: 4,
-  hard: 6,
+  easy: 1,    // unused — A* handles easy
+  medium: 1,  // unused — A* handles medium
+  hard: 3,
+  expert: 5,
 };
 
 function opponent(side: Side): Side {

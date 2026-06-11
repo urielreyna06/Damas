@@ -33,8 +33,8 @@ gamesRouter.post("/", async (c) => {
   const { clerkUserId } = getClerkUser(c);
   const body = await c.req.json<{ difficulty: unknown }>();
 
-  if (!["easy", "medium", "hard"].includes(body.difficulty as string)) {
-    return c.json({ code: "INVALID_DIFFICULTY", message: "difficulty must be easy|medium|hard" }, 400);
+  if (!["easy", "medium", "hard", "expert"].includes(body.difficulty as string)) {
+    return c.json({ code: "INVALID_DIFFICULTY", message: "difficulty must be easy|medium|hard|expert" }, 400);
   }
 
   const now = new Date().toISOString();
