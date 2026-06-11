@@ -4,6 +4,84 @@
 
 ---
 
+## Sesión 2026-06-11 — Análisis + planificación: overhaul webapp standalone (damas.zip)
+
+**Solo análisis/diseño. CERO cambios de código.**
+
+### Scope
+Webapp standalone de damas (HTML/CSS/JSX puro, sin build step, CDN React 18 + Babel).
+Archivos fuente en `/tmp/damas_extract/assets/` (extraídos de `damas.zip` en raíz del repo).
+Destino final: `design_handoff_damas/design_handoff_damas/` (reemplazar archivos viejos).
+Rama de trabajo: `feature/damas-overhaul` (ya existe localmente).
+
+### Archivos auditados (4 leídos completos)
+| Archivo | Líneas | Función |
+|---------|--------|---------|
+| `assets/engine.js` | 188 | Motor de juego (IIFE → `window.Damas`) |
+| `assets/game.jsx` | 506 | Componente React principal + Board + SidePanel |
+| `assets/shared.js` | 626 | State management (Store), renderStaticBoard |
+| `assets/board.css` | 384 | Estilos del tablero y piezas |
+
+### Features solicitadas (pendientes de implementación)
+1. **Selector de algoritmo IA por dificultad:**
+   - Fácil = random (mejor para aprender mecánicas)
+   - Medio = A* greedy 1-ply (best-first usando evaluate(), tiebreak random)
+   - Difícil = Minimax + alfa-beta, profundidad 3
+   - Experto "Guardián Ancestral" = Minimax + AB, profundidad 4 (4ª dificultad nueva)
+2. **3 reglamentos seleccionables antes de iniciar partida:**
+   - Damas Inglesas (8×8, hombres solo hacia adelante, damas 1 casilla, promoción termina cadena)
+   - Damas Españolas (8×8, captura atrás, damas voladoras, captura máxima, promueve durante cadena)
+   - Damas Internacionales (10×10, 20 piezas/lado, captura atrás, damas voladoras, captura máxima, promoción termina cadena)
+3. **Bitácora completa:** log JSON acumulado durante la partida + botón "Exportar bitácora" en EndModal
+4. **UX:** 500ms delay IA, highlight de path, animaciones suaves, Web Audio SFX
+
+### Plan de implementación (5 fases, en orden)
+
+**Fase 1 — engine.js (PRIORIDAD MÁXIMA, todo lo demás depende de esto)**
+- Agregar objeto `RULES` con presets `english`, `spanish`, `international` (+ campos `key`, `label`)
+- Parametrizar TODAS las funciones con `rules` (default fallback `RULES.english`)
+- Implementar damas voladoras: scan diagonal multi-casilla + `capturedSet` para ghost-blocking
+- Implementar `menCaptureBackward`, `forceMaximumCapture`, `promoteDuringCapture`
+- Tablero 10×10: 4 filas de piezas por lado (20 piezas/lado)
+- Agregar `aStarGreedy(b, rules)`: 1-ply best-first usando `evaluate()`
+- Remapear `aiMove`: easy=random, medium=A*greedy, hard=minimax-d3, expert=minimax+AB-d4
+- Exportar `RULES` en `global.Damas`
+
+**Fase 2 — play.html**
+- Agregar 4ª tarjeta de dificultad: Experto / "Guardián Ancestral"
+- Fix grid CSS: `repeat(4, 1fr)` o responsive
+- Agregar selector de 3 reglamentos (encima de dificultad, antes de iniciar)
+- Pasar `{difficulty, rulesKey}` a `Store.createGame()`
+
+**Fase 3 — shared.js**
+- `createGame(difficulty, rulesKey)` → guarda `rules: { ...R, key: rk }` en el game
+- Llama `Damas.initialBoard(RULES[rulesKey])`
+- `renderStaticBoard` usa tamaño del tablero dinámicamente
+
+**Fase 4 — game.jsx**
+- `boardSize` dinámico desde `game.rules || D.RULES.english`
+- `ALL_FILES` cortado a `boardSize`; `sqName` usa `boardSize`
+- `piecesFromBoard` / `boardFromPieces` usan `boardSize`
+- Posicionamiento de piezas: `(p.r / boardSize * 100) + '%'`
+- Bucles de casillas hasta `boardSize`; atributo `data-size={boardSize}` en Board
+- Pasar `gameRules` a todas las llamadas `D.*`
+- Agregar `expert` a `SidePanel.diffMeta`
+- `capByHuman/capByAi`: `boardSize === 10 ? 20 : 12`
+- Bitácora: `gameStartRef` + `bitacoraRef` → acumular en `playMove` → exportar en `EndModal`
+- Coordenadas dinámicas (ranks array de `boardSize`)
+
+**Fase 5 — board.css**
+- Agregar variante `[data-size="10"]`: grid 10×10, `.piece` 10%
+
+### Hallazgos críticos del análisis
+- `SIZE = 8` hardcodeado globalmente en engine.js → reemplazar con `rules.boardSize`
+- `capturesFrom` es recursivo; damas voladoras requieren `capturedSet` como Set para no re-capturar fantasmas
+- `promoteDuringCapture` (Españolas) corona a mitad de cadena y la pieza continúa como dama voladora
+- `game.jsx:89` → `D.legalMoves(board, 'human')` sin rules — TODOS los call-sites necesitan el param
+- Compatibilidad retroactiva: juegos viejos en localStorage no tienen `rules` → fallback `D.RULES.english`
+
+---
+
 ## Sesión 2026-06-09 — Auditoría algoritmo IA: discrepancia A*↔Minimax (TODO máx. prioridad)
 
 **Solo documentación. CERO cambios de código** (usuario presentando en minutos, sin riesgo).

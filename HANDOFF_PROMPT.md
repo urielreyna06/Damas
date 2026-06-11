@@ -1,7 +1,7 @@
 # Handoff Prompt — Damas PvE
 
 > Copia el bloque de PASO 2 y pégalo como primer mensaje en la próxima sesión de Claude Code.
-> Estado actualizado: **2026-06-09**
+> Estado actualizado: **2026-06-11**
 > Ver `SESSION_LOG.md` para el diario completo de cambios por sesión.
 > Para estudiar el proyecto a fondo: `GUIA_DIDACTICA.md`.
 
@@ -188,7 +188,61 @@ docker exec damas-ai-service bun test
 
 ## ❌ Pendiente — en orden de prioridad
 
-### 0. 🔴 MÁXIMA PRIORIDAD — Resolver algoritmo de IA: A* vs Minimax (decisión + alinear código y docs)
+### 0. 🔴 MÁXIMA PRIORIDAD — Overhaul webapp standalone (damas.zip → design_handoff_damas/)
+
+**Contexto (auditado 2026-06-11, ver SESSION_LOG.md entrada de ese día):**
+Webapp standalone puro (HTML/CSS/JSX, CDN React 18 + Babel, sin build step).
+Análisis COMPLETO. **CERO código escrito.** Listo para implementar.
+
+**Rama de trabajo:** `feature/damas-overhaul` (existe localmente).
+**Archivos fuente:** `/tmp/damas_extract/assets/` (extraídos de `damas.zip` en raíz del repo).
+**Destino final:** `design_handoff_damas/design_handoff_damas/` (reemplazar archivos viejos, sin duplicados).
+
+**Features a implementar (en este orden):**
+
+**Fase 1 — `assets/engine.js` (ESCRIBIR PRIMERO — todo depende de esto)**
+- Presets `RULES = { english, spanish, international }` con campos `key` y `label`
+  ```
+  english:       { boardSize:8,  menCaptureBackward:false, flyingKings:false, forceMaximumCapture:false, promoteDuringCapture:false }
+  spanish:       { boardSize:8,  menCaptureBackward:true,  flyingKings:true,  forceMaximumCapture:true,  promoteDuringCapture:true  }
+  international: { boardSize:10, menCaptureBackward:true,  flyingKings:true,  forceMaximumCapture:true,  promoteDuringCapture:false }
+  ```
+- Todos los métodos aceptan `rules` (fallback `RULES.english`); `SIZE` global → `rules.boardSize`
+- Damas voladoras: scan multi-casilla + `capturedSet` Set para ghost-blocking en cadenas
+- `promoteDuringCapture`: Españolas corona a mitad de cadena, continúa como dama voladora
+- `forceMaximumCapture`: filtrar solo movimientos con más capturas del set
+- 10×10: `initialBoard` pone 4 filas de piezas por lado (20 piezas)
+- `aStarGreedy(b, rules)`: 1-ply best-first usando `evaluate()`, tiebreak random
+- Remapear `aiMove`: easy=random, medium=aStarGreedy, hard=minimax-d3, expert=minimax+AB-d4
+- Exportar `RULES` en `global.Damas`
+
+**Fase 2 — `play.html`**
+- 4ª tarjeta dificultad: Expert / "Guardián Ancestral"; grid `repeat(4,1fr)`
+- Selector de 3 reglamentos (antes de iniciar): Inglesas / Españolas / Internacionales
+- Handler `start-btn` pasa `Store.createGame(selectedDiff, selectedRules)`
+
+**Fase 3 — `assets/shared.js`**
+- `createGame(difficulty, rulesKey)` → `initialBoard(D.RULES[rulesKey])` + `rules:{...R,key:rk}`
+- `renderStaticBoard` usa tamaño del board dinámicamente
+
+**Fase 4 — `assets/game.jsx`**
+- `boardSize` de `game.rules || D.RULES.english`; `ALL_FILES` sliced; `sqName` dinámico
+- `piecesFromBoard/boardFromPieces` usan `boardSize`; `data-size={boardSize}` en Board
+- Todos los `D.*` calls reciben `gameRules`; expert en `diffMeta`
+- `capByHuman/capByAi`: `boardSize===10?20:12`; promote row: `gameRules.boardSize-1`
+- Bitácora: `gameStartRef+bitacoraRef` → acumular en `playMove` → botón "Exportar bitácora" en EndModal
+- Coords dinámicos (ranks array de `boardSize`)
+
+**Fase 5 — `assets/board.css`**
+- `[data-size="10"] .squares`: `repeat(10,1fr)`; `[data-size="10"] .piece`: `10%`
+
+**Reglas IP (nunca romper):**
+- El motor y el sistema son originales. El arte de personajes lo aporta el usuario como archivos.
+- NO generar ni dibujar personajes con copyright. NO generar los PNG.
+
+---
+
+### 1. 🟡 Resolver algoritmo de IA (proyecto principal): A* vs Minimax (decisión + alinear código y docs)
 
 **Contexto (auditado 2026-06-09, ver SESSION_LOG.md entrada de ese día):**
 - El usuario recuerda haber pedido migrar a **A\*** y haber quitado Minimax de la documentación.
@@ -211,17 +265,17 @@ el repo en GitHub, hacer **scrub de secretos** (`SESSION_LOG.md` ~línea 718 tie
 
 ---
 
-### 1. Golden path — solo falta el tramo de Stripe
+### 2. Golden path — solo falta el tramo de Stripe
 ✅ Acceso a partida y ciclo de jugada (humano→IA) VERIFICADOS en vivo (sesión 2026-06-08 parte 2).
 Falta el tramo de monetización: compra de skin con Stripe (requiere `stripe listen
 --forward-to localhost:3001/api/stripe/webhook`), webhook desbloquea, activar en /me, skin en partida.
 
-### 2. INV-01 — Assets SVG reales (cosmético, no bloquea MVP)
+### 3. INV-01 — Assets SVG reales (cosmético, no bloquea MVP)
 Los SVG en frontend/public/themes/{skin_id}/ son placeholders.
 Las skins muestran CSS vars únicos correctamente (verificado con screenshot).
 Para producción: reemplazar con assets reales. Convención: red-man, black-man, red-king, black-king.
 
-### 3. Stripe webhook en producción
+### 4. Stripe webhook en producción
 Configurar endpoint en Stripe dashboard apuntando al dominio de producción.
 
 ## Reglas que NUNCA se rompen
