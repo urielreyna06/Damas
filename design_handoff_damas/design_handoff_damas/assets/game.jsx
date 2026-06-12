@@ -7,6 +7,7 @@ const D = window.Damas;
 const FILES = ['a','b','c','d','e','f','g','h','i','j'];
 const sqName = ([r, c], S) => FILES[c] + (S - r);
 const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+const ALG_LABELS = { easy: 'A* Greedy', medium: 'A* Depth-2', hard: 'Minimax d3', expert: 'Minimax d4 α-β' };
 
 let _pid = 0;
 function piecesFromBoard(b) {
