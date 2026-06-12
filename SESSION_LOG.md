@@ -4,6 +4,355 @@
 
 ---
 
+## Sesión 2026-06-11 — Overhaul completo webapp standalone (multi-ruleset, 10×10, Expert)
+
+**Análisis + implementación completa de las 5 fases. Commit: `d1f254d`.**
+
+### Scope
+Webapp standalone de damas (HTML/CSS/JSX puro, sin build step, CDN React 18 + Babel).
+Archivos fuente en `/tmp/damas_extract/assets/` (extraídos de `damas.zip` en raíz del repo).
+Destino final: `design_handoff_damas/design_handoff_damas/` (reemplazar archivos viejos).
+Rama de trabajo: `feature/damas-overhaul` (ya existe localmente).
+
+### Archivos auditados (4 leídos completos)
+| Archivo | Líneas | Función |
+|---------|--------|---------|
+| `assets/engine.js` | 188 | Motor de juego (IIFE → `window.Damas`) |
+| `assets/game.jsx` | 506 | Componente React principal + Board + SidePanel |
+| `assets/shared.js` | 626 | State management (Store), renderStaticBoard |
+| `assets/board.css` | 384 | Estilos del tablero y piezas |
+
+### Features solicitadas (pendientes de implementación)
+1. **Selector de algoritmo IA por dificultad:**
+   - Fácil = random (mejor para aprender mecánicas)
+   - Medio = A* greedy 1-ply (best-first usando evaluate(), tiebreak random)
+   - Difícil = Minimax + alfa-beta, profundidad 3
+   - Experto "Guardián Ancestral" = Minimax + AB, profundidad 4 (4ª dificultad nueva)
+2. **3 reglamentos seleccionables antes de iniciar partida:**
+   - Damas Inglesas (8×8, hombres solo hacia adelante, damas 1 casilla, promoción termina cadena)
+   - Damas Españolas (8×8, captura atrás, damas voladoras, captura máxima, promueve durante cadena)
+   - Damas Internacionales (10×10, 20 piezas/lado, captura atrás, damas voladoras, captura máxima, promoción termina cadena)
+3. **Bitácora completa:** log JSON acumulado durante la partida + botón "Exportar bitácora" en EndModal
+4. **UX:** 500ms delay IA, highlight de path, animaciones suaves, Web Audio SFX
+
+### Plan de implementación (5 fases, en orden)
+
+**Fase 1 — engine.js (PRIORIDAD MÁXIMA, todo lo demás depende de esto)**
+- Agregar objeto `RULES` con presets `english`, `spanish`, `international` (+ campos `key`, `label`)
+- Parametrizar TODAS las funciones con `rules` (default fallback `RULES.english`)
+- Implementar damas voladoras: scan diagonal multi-casilla + `capturedSet` para ghost-blocking
+- Implementar `menCaptureBackward`, `forceMaximumCapture`, `promoteDuringCapture`
+- Tablero 10×10: 4 filas de piezas por lado (20 piezas/lado)
+- Agregar `aStarGreedy(b, rules)`: 1-ply best-first usando `evaluate()`
+- Remapear `aiMove`: easy=random, medium=A*greedy, hard=minimax-d3, expert=minimax+AB-d4
+- Exportar `RULES` en `global.Damas`
+
+**Fase 2 — play.html**
+- Agregar 4ª tarjeta de dificultad: Experto / "Guardián Ancestral"
+- Fix grid CSS: `repeat(4, 1fr)` o responsive
+- Agregar selector de 3 reglamentos (encima de dificultad, antes de iniciar)
+- Pasar `{difficulty, rulesKey}` a `Store.createGame()`
+
+**Fase 3 — shared.js**
+- `createGame(difficulty, rulesKey)` → guarda `rules: { ...R, key: rk }` en el game
+- Llama `Damas.initialBoard(RULES[rulesKey])`
+- `renderStaticBoard` usa tamaño del tablero dinámicamente
+
+**Fase 4 — game.jsx**
+- `boardSize` dinámico desde `game.rules || D.RULES.english`
+- `ALL_FILES` cortado a `boardSize`; `sqName` usa `boardSize`
+- `piecesFromBoard` / `boardFromPieces` usan `boardSize`
+- Posicionamiento de piezas: `(p.r / boardSize * 100) + '%'`
+- Bucles de casillas hasta `boardSize`; atributo `data-size={boardSize}` en Board
+- Pasar `gameRules` a todas las llamadas `D.*`
+- Agregar `expert` a `SidePanel.diffMeta`
+- `capByHuman/capByAi`: `boardSize === 10 ? 20 : 12`
+- Bitácora: `gameStartRef` + `bitacoraRef` → acumular en `playMove` → exportar en `EndModal`
+- Coordenadas dinámicas (ranks array de `boardSize`)
+
+**Fase 5 — board.css**
+- Agregar variante `[data-size="10"]`: grid 10×10, `.piece` 10%
+
+### Hallazgos críticos del análisis
+- `SIZE = 8` hardcodeado globalmente en engine.js → reemplazar con `rules.boardSize`
+- `capturesFrom` es recursivo; damas voladoras requieren `capturedSet` como Set para no re-capturar fantasmas
+- `promoteDuringCapture` (Españolas) corona a mitad de cadena y la pieza continúa como dama voladora
+- `game.jsx:89` → `D.legalMoves(board, 'human')` sin rules — TODOS los call-sites necesitan el param
+- Compatibilidad retroactiva: juegos viejos en localStorage no tienen `rules` → fallback `D.RULES.english`
+
+### Implementación completada (misma sesión, tras crash y reorientación)
+
+| Fase | Archivo | Estado | Cambios clave |
+|------|---------|--------|---------------|
+| 1 | `engine.js` | ✅ | RULES preset, boardSize 8/10, damas voladoras, aStarGreedy, aiMove remapeado |
+| 2 | `play.html` | ✅ | 4ª tarjeta Expert, selector 3 variantes, handler wired |
+| 3 | `shared.js` | ✅ | createGame(diff, rulesKey), renderStaticBoard dinámico |
+| 4 | `game.jsx` | ✅ | S=boardSize en todo, coords dinámicos, diffMeta expert, bitácora + exportar .txt |
+| 5 | `board.css` | ✅ | repeat(10,1fr) y piece 10% para data-size="10" |
+
+**Archivos modificados:** 5 (+477 / −233 líneas). **Commit:** `d1f254d`.
+
+---
+
+## Sesión 2026-06-09 — Auditoría algoritmo IA: discrepancia A*↔Minimax (TODO máx. prioridad)
+
+**Solo documentación. CERO cambios de código** (usuario presentando en minutos, sin riesgo).
+
+### Qué se verificó (double-check a petición del usuario)
+- **Código actual:** `ai-service/src/minimax.ts` (Minimax + alfa-beta + iterative deepening) está
+  en uso. `routes.ts`, `calibrate.ts` y `tests/ai.test.ts` importan de `./minimax.ts`.
+- **No existe `astar.ts`** en ningún punto del repo (`find -iname "*astar*"` → vacío).
+- **Toda la documentación** (PRD, GUIA_DIDACTICA, CLAUDE.md, PROJECT_BREAKDOWN) describe Minimax.
+- **Sin rastro en git:** `git log` no tiene commits que mencionen A*, astar ni minimax. El trabajo
+  A*↔Minimax ocurrió en working tree y nunca se commiteó → no es auditable por historial.
+
+### La discrepancia (origen de la confusión del usuario)
+El propio SESSION_LOG (§1 de la entrada 2026-06-02, líneas ~685-713) registra:
+1. Se **implementó A* adversarial** (`astar.ts` existió, el código lo usaba).
+2. Luego se **revirtió a Minimax** "por decisión del usuario"; `astar.ts` fue borrado.
+3. Quedó la nota: "ADR-005/RF-17 documentan Minimax (A* descartado). Contradice el código que usaba
+   A*. Resolver en próxima sesión." — esa resolución terminó en Minimax.
+
+El usuario recuerda haber pedido A* y haber quitado Minimax de los docs; el estado final commiteado
+es Minimax. No se puede probar por git si la reversión fue decisión suya o un cambio mal etiquetado.
+
+### Acción pendiente (ver HANDOFF_PROMPT.md → sección 0, MÁXIMA PRIORIDAD)
+Decidir definitivamente A* vs Minimax y dejar código + docs alineados. NO resuelto esta sesión
+por petición expresa (no arriesgar nada antes de la presentación).
+
+### Nota de infraestructura
+- **No hay git remote configurado** (`git remote -v` vacío). No se pudo abrir PR en GitHub.
+- Se preparó la rama local `docs/ai-algorithm-astar-todo` con el commit de docs, lista para PR
+  cuando se configure el remote.
+- ⚠️ `SESSION_LOG.md` (línea ~718) y `.env` contienen secretos REALES (whsec_ Stripe, claves
+  Clerk/Stripe). **Hacer scrub antes de publicar el repo en GitHub.**
+
+---
+
+## Sesión 2026-06-08 (parte 3) — Bajar dificultad de la IA en todos los niveles
+
+A petición del usuario ("bajar un poco la dificultad en general en todos los niveles").
+La fuerza de la IA se controla por la profundidad de búsqueda minimax en
+`ai-service/src/minimax.ts` (`MAX_DEPTH`). Se restó 1 ply a cada nivel:
+
+| Nivel  | Antes | Ahora |
+|--------|-------|-------|
+| easy   | 2     | **1** |
+| medium | 4     | **3** |
+| hard   | 6     | **5** |
+
+- Sin tocar pesos heurísticos (INV-02 sigue válido) ni el time limit (1800ms).
+- Tests ai-service: **6/6 pass** (CA-09 `depth>=1`, CA-10 `hard<2s` — más rápido aún, captura forzada OK).
+- Requirió rebuild del ai-service (sin volume mounts). Hecho; health 200, healthy.
+- Reversible: restaurar 2/4/6 en `MAX_DEPTH` y rebuild ai-service.
+
+---
+
+## Sesión 2026-06-08 (parte 2) — Fix acceso a partida (`<Outlet/>` faltante) + golden path verificado en vivo
+
+### Problema reportado
+"No puedo jugar." Clic en "Continuar partida" → carga infinita; imposible entrar a la sala de juego.
+Consola sin errores de red; solo los warnings conocidos (manifest, clerk_init_state, WS HMR).
+
+### Diagnóstico
+El happy-path del código de la partida era correcto (fix de `getToken` intacto, `finally` apaga
+`loading`). El spinner "infinito" NO venía de Clerk ni del loading. Conduciendo un browser headless
+con la sesión real del usuario (cookies de Clerk inyectadas — ver "Metodología") se observó:
+al pulsar "Continuar" la **URL cambiaba a `/play/:id` pero la pantalla seguía mostrando el lobby**,
+y **nunca se disparaba `GET /api/games/:id`**.
+
+### Causa raíz
+`/play/$gameId` es ruta **hija** de `/play` en el enrutado file-based de TanStack
+(`routeTree.gen.ts`: `PlayGameIdRoute.getParentRoute = () => PlayRoute`). Para que una ruta hija
+se monte, el componente padre **debe** renderizar `<Outlet/>`. **`play.tsx` no tenía `<Outlet/>`**
+(renderizaba el lobby directo) → el componente `GamePage` (el tablero) nunca se montaba.
+No se había detectado antes porque el golden path jamás se había probado en browser con sesión real
+(`verify-login.mjs` solo toca la landing).
+
+### Fix
+**`frontend/src/routes/play.tsx`** (1 archivo, sin regen de `routeTree.gen.ts`, reversible):
+- Import de `Outlet, useChildMatches` de `@tanstack/react-router`.
+- `const childMatches = useChildMatches();` (`[]` en `/play`, la match del hijo en `/play/$gameId`).
+- Tras los hooks: `if (childMatches.length > 0) return <Outlet />;` → renderiza el tablero cuando
+  hay ruta hija activa; el lobby solo en `/play` exacto.
+
+**`frontend/src/routes/play.$gameId.tsx`** (fix A, red de seguridad defensiva, aplicado antes de
+hallar la causa raíz, se conserva): guard de token nulo + **watchdog 8s** (el skeleton ya no puede
+ser infinito) + botón **Reintentar** en la pantalla de error. Cubre un modo de fallo latente
+(que `getToken()` de Clerk se cuelgue). Reversible si se quiere diff mínimo.
+
+### Metodología de verificación (sin poder loguear por anti-bot)
+- Login automatizado bloqueado en dos frentes: **Google OAuth headless** → "navegador no seguro";
+  **sign-up por email de Clerk** → CAPTCHA Cloudflare Turnstile. Ambos son protección anti-bot.
+- Solución: el usuario exportó las cookies de su sesión (`document.cookie`) y se inyectaron en el
+  browser headless (`e2e/golden-cookies.mjs`, lee `/tmp/clerk-cookies.json` — borrado tras usar,
+  contiene tokens reales, NUNCA se commitea). La clave es `__clerk_db_jwt` (dev-browser token):
+  permite a Clerk JS recuperar y refrescar la sesión aunque el `__session` JWT esté expirado.
+
+### Resultado (verificado en vivo con la sesión real)
+- `clerk state: { hasClerk:true, user:user_3E6O4..., session:active }`.
+- Acceso: clic en Continuar → `GamePage` monta y dispara, **todos 200**: `GET /api/games/:id`,
+  `GET /api/me`, `GET /api/games/:id/legal-moves`. **El tablero 8×8 renderiza** (`e2e/_artifacts/c03-final.png`).
+- Jugada real (`e2e/golden-move.mjs`): apertura 5,0→4,1 → `POST /api/games/:id/moves` → **200** →
+  "Tus movimientos: 1" y la **IA responde** (`e2e/_artifacts/m03-after-move.png`). El ciclo de juego funciona.
+- HTTP audit: **16/16**. Typecheck frontend: **EXIT 0**. Login/tienda intactos.
+
+### Inconsistencia menor encontrada (no bloqueante)
+El panel lateral "Últimos movimientos" mostró "Sin movimientos aún" pese a contador=1 tras la jugada.
+Cosmético (el historial lee `game.moves`); no afecta el juego. Follow-up opcional.
+
+### Otros hallazgos
+- Clerk instalado es **`@clerk/tanstack-start@0.3.0`** (no 0.4.13 como dice package.json/CLAUDE.md).
+- `__clerk_init_state=undefined` viene de `ssr.tsx` con `createStartHandler` pelado (sin
+  `createClerkHandler`). No bloquea. "Fix B" opcional exigiría añadir `CLERK_SECRET_KEY` al
+  contenedor frontend (hoy solo tiene la publishable).
+
+### Archivos
+- `frontend/src/routes/play.tsx` — `<Outlet/>` vía `useChildMatches` (FIX PRINCIPAL).
+- `frontend/src/routes/play.$gameId.tsx` — watchdog + Reintentar + guard token (fix A defensivo).
+- `MATCH_ACCESS_FIX.md` — informe nuevo.
+- `e2e/golden-cookies.mjs`, `e2e/golden-move.mjs`, `e2e/golden-login.mjs` — drivers de verificación (sin secretos).
+- Branch: `fix/match-loading`.
+
+### Estado al cerrar
+**El usuario ya puede jugar.** Acceso a partida + ciclo de jugada verificados en vivo. Pendiente del
+golden path: solo el tramo de compra de skin con Stripe (requiere `stripe listen`).
+
+---
+
+## Sesión 2026-06-08 — Diagnóstico errores consola + fix optimizeDeps
+
+### Problemas reportados
+- `window.__clerk_init_state = undefined` en consola del browser
+- `Warning: <Scripts /> found no manifest`
+- WebSocket HMR falla con código 400 (`Unexpected response code: 400`)
+- `loaderData: {"$undefined":0}` en todas las rutas
+
+### Diagnóstico
+
+**verify-login.mjs confirmó app FUNCIONAL:** `loginVisible:true`, `clerkGlobal:true`,
+CSS aplicando (`bodyBg: rgb(14, 14, 18)`). Los 4 "errores" son todos harmless dev warnings.
+
+**verificado tras rebuild — los 4 errores son TODOS de HMR, no de la app:**
+1. `__clerk_init_state = undefined`, `<Scripts /> found no manifest`, `loaderData:{"$undefined":0}`
+   → warnings independientes de dev mode, ya documentados como inofensivos.
+2. `ws://localhost:24678/_build/?token=... → 400` + `[vite] failed to connect` +
+   `PAGEERROR: WebSocket closed` → HMR WebSocket roto. Causa raíz (en logs del servidor):
+   `WebSocket server error: Port undefined is already in use`. Vinxi levanta DOS dev servers
+   (client + SSR); la config `server.hmr` se aplica a ambos → el primero toma 24678, el
+   segundo falla con "undefined" → el browser conecta al WS equivocado → 400.
+
+### Fix implementado (parcial)
+
+**`frontend/app.config.ts`** — Añadido `optimizeDeps.include` con las 6 deps críticas:
+```typescript
+optimizeDeps: {
+  include: ["react", "react-dom", "react-dom/client",
+            "@tanstack/react-router", "@tanstack/start", "@clerk/tanstack-start"],
+},
+```
+**Lo que SÍ logró:** eliminó el mensaje `✨ optimized dependencies changed. reloading`
+de los logs. Vite ahora pre-bundlea al arrancar el container → ya NO hay full-page reload
+en la primera visita del browser (mejora real de DX, evita parpadeo/reinicialización).
+
+**Lo que NO logró:** el WS 400 PERSISTE — tiene causa raíz distinta (doble dev server de
+Vinxi compartiendo config HMR, ver arriba). La hipótesis inicial de que el reload causaba
+el token mismatch era incorrecta.
+
+**Impacto: NULO en funcionalidad.** El HMR solo afecta hot-reload en vivo. El frontend en
+este proyecto NO usa HMR (sin volume mounts en WSL2 → cada cambio requiere rebuild, ver
+CLAUDE.md §9). Los 4 errores son ruido de consola cosmético. App 16/16 funcional.
+
+**Requiere rebuild:** `docker compose build frontend && docker compose up -d frontend` (hecho)
+
+### Verificación tras rebuild
+- HTTP audit: 16/16 pass
+- verify-login.mjs: loginVisible:true, clerkGlobal:true, bodyBg:rgb(14,14,18), errorCount:4 (todos HMR)
+- Logs servidor: confirmado SIN `optimized dependencies changed. reloading`
+
+### Estado de los 4 objetivos del usuario
+
+1. ClerkProvider sin errores → ✅ Ya funciona (confirmado browser headless)
+2. `/play/:matchId` sin fallo useAuth → ✅ ClerkProvider envuelve correctamente en `__root.tsx:42`
+3. Gameplay sin loading infinito → ✅ Fix getToken deps de sesión 2026-06-07 intacto
+4. Skins preview → ✅ Confirmado en sesión previa
+
+### Archivos modificados
+- `frontend/app.config.ts` — añadido `optimizeDeps.include`
+
+### Pendiente
+- HMR WebSocket 400 (NO bloqueante, cosmético): si algún día se quiere arreglar el hot-reload,
+  investigar el doble dev server de Vinxi y aislar la config `server.hmr` solo al router client.
+  Bajo riesgo de desestabilizar el stack TanStack 1.99.x — no tocar sin necesidad real.
+- Golden path manual (login → play → leaderboard → shop → skin)
+
+---
+
+## Sesión 2026-06-07 — Fix gameplay carga infinita + UX/UI audit
+
+### Problemas reportados
+1. Partida en carga infinita al hacer clic en "Continuar partida"
+2. Skins mostrando solo imagen por defecto en tienda y perfil
+
+### Diagnóstico (4 agentes en paralelo)
+
+**Bug 1 — Causa raíz del gameplay infinito:**
+`play.$gameId.tsx` incluía `getToken` (función Clerk) en los arrays de deps de todos los
+`useCallback`: `fetchGame`, `handleMoveSend`, `handlePlayAgain`, `handleAbandon`. La referencia
+de `getToken` puede cambiar entre renders durante inicialización o token-refresh de Clerk.
+Esto recrea los callbacks en cada render → `useEffect` que depende de `fetchGame` refirma →
+múltiples fetches concurrentes y race conditions → en algunos escenarios (token refresh lento,
+red Docker) el estado `loading` puede quedarse en `true`.
+
+**Bug 2 — Skins:**
+Verificado que el mecanismo CSS es correcto (`THEME_ID_TO_SKIN` mapea bien, CSS vars distintos
+por skin, `board.css` los usa, inline styles sobrescriben `:root`). Las skins se ven distintas
+en producción. La queja original fue por la sesión 2026-06-04 donde el seed no fijaba `_id`
+slugs; ese bug ya estaba resuelto. Confirmado con screenshot: 5 skins visualmente únicas.
+
+### Fixes implementados
+
+1. **`play.$gameId.tsx`** — Eliminado `getToken` de deps de los 4 callbacks y el useEffect
+   de tema. Patrón correcto: `getToken` se llama *dentro* del callback al momento de invocar,
+   no se captura. Comentario `eslint-disable-next-line react-hooks/exhaustive-deps` en cada uno.
+
+2. **`play.tsx`** — `disabled={creating === d.id}` en lugar de `disabled={creating !== null}`.
+   Antes todos los botones de dificultad se deshabilitaban al crear uno. Ahora solo el activo.
+
+3. **`me.tsx`** — Agregado `setTimeout(() => setSuccessMsg(null), 3000)` para auto-limpiar
+   el mensaje "Skin activa actualizada." después de 3 segundos.
+
+4. **`EndModal.tsx`** — Agregado estado `dismissed` local + botón `×` (posición absoluta
+   top-right) + clic en backdrop cierra el modal. Ahora el usuario puede cerrar el modal
+   de fin de partida sin tener que navegar.
+
+5. **`globals.css`** — `position: relative` en `.modal` (necesario para el botón × absoluto).
+
+6. **`shop.tsx`** — Eliminado `getToken` de deps del useEffect de owned skins (mismo patrón
+   que fix #1). El fetch de badges se ejecuta una vez al montar, no en cada render de Clerk.
+
+### Archivos modificados
+- `frontend/src/routes/play.$gameId.tsx` — fix getToken deps (4 callbacks + 1 effect)
+- `frontend/src/routes/play.tsx` — fix disabled state diff buttons
+- `frontend/src/routes/me.tsx` — auto-clear success message
+- `frontend/src/routes/shop.tsx` — fix getToken deps en owned badges effect
+- `frontend/src/components/ui/EndModal.tsx` — botón cierre + backdrop dismiss
+- `frontend/src/styles/globals.css` — `.modal { position: relative }`
+- `GAMEPLAY_SKINS_FIX.md` — nuevo archivo de reporte
+
+### Verificación
+- HTTP audit: 16/16 pass (pre y post rebuild)
+- verify-login.mjs: `loginVisible:true`, `clerkGlobal:true`, CSS ok (post warm-up)
+- Screenshot /shop: 5 skins visualmente distintas (Classic Wood, Neon Glow, Marble Board,
+  Vector Classic, Retro Pixel) — cada una con colores únicos de tablero y piezas
+- Screenshot landing: hero + nav + tablero preview correctos
+
+### Estado al cerrar
+Stack completo funcionando. Fixes de gameplay y UX aplicados. Pendiente: test manual
+del golden path completo (requiere sesión Clerk real con cuenta de test).
+
+---
+
 ## Sesión 2026-06-04 — Fix 503: volume mounts vacíos en WSL2 `/mnt/a/`
 
 ### Problema reportado

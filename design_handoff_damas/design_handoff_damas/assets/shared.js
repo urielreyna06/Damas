@@ -72,6 +72,42 @@
         '--a1': '#46D0C0', '--a2': '#1C7A78', '--ak': '#0c4a48',
       },
     },
+    /* ── PNG clan skins — tiles/pieces/frame loaded from assets/skins/{id}/*.png ── */
+    { id: 'templo', name: 'Templo del Tiempo', tag: 'Fantasy', price: 3.99,
+      blurb: 'Ancient stone tiles, bronze-clad warriors — timeless relics on every square.',
+      vars: { '--sq-light': '#C4B89A', '--sq-dark': '#2E3D28', '--frame': '#1A150E',
+              '--edge': 'rgba(193,152,80,0.50)', '--h1': '#C4A24A', '--h2': '#7A6228', '--hk': '#3e2f0e',
+              '--a1': '#4A3040', '--a2': '#1E1018', '--ak': '#0e0008' } },
+    { id: 'desierto', name: 'Clan del Desierto', tag: 'Dorado', price: 3.99,
+      blurb: 'Golden sand and crescent steel — warriors of sun and moon clash at dusk.',
+      vars: { '--sq-light': '#D4A831', '--sq-dark': '#3A1850', '--frame': '#1E0E02',
+              '--edge': 'rgba(220,180,60,0.55)', '--h1': '#E8C040', '--h2': '#9A7018', '--hk': '#4a3008',
+              '--a1': '#8A1E28', '--a2': '#3A0A10', '--ak': '#1a0408' } },
+    { id: 'bosque', name: 'Clan del Bosque', tag: 'Natural', price: 3.99,
+      blurb: 'Tangled roots, emerald canopy — ancient spirits guard the living board.',
+      vars: { '--sq-light': '#A8C470', '--sq-dark': '#1E3A18', '--frame': '#0E1C08',
+              '--edge': 'rgba(80,180,80,0.50)', '--h1': '#70C050', '--h2': '#2E6018', '--hk': '#0e3008',
+              '--a1': '#3A5010', '--a2': '#1A2808', '--ak': '#081404' } },
+    { id: 'hada', name: 'Clan de las Hadas', tag: 'Mágico', price: 3.99,
+      blurb: 'Crystal petals and luminous orbs — magic blooms across every square.',
+      vars: { '--sq-light': '#C8B8F0', '--sq-dark': '#1A1458', '--frame': '#0A0828',
+              '--edge': 'rgba(120,140,255,0.60)', '--h1': '#80A8F8', '--h2': '#3050C0', '--hk': '#102060',
+              '--a1': '#D040A8', '--a2': '#601848', '--ak': '#300824' } },
+    { id: 'fuego', name: 'Clan del Fuego', tag: 'Volcánico', price: 3.99,
+      blurb: 'Molten obsidian and flame elementals — every move scorches the board.',
+      vars: { '--sq-light': '#C07040', '--sq-dark': '#1A0802', '--frame': '#0A0400',
+              '--edge': 'rgba(255,120,40,0.60)', '--h1': '#E08030', '--h2': '#803010', '--hk': '#401808',
+              '--a1': '#D04820', '--a2': '#600C04', '--ak': '#300402' } },
+    { id: 'agua', name: 'Clan del Agua', tag: 'Marino', price: 3.99,
+      blurb: 'Translucent ice and deep-sea creatures — the tide decides every battle.',
+      vars: { '--sq-light': '#80C8D8', '--sq-dark': '#0A2840', '--frame': '#04121C',
+              '--edge': 'rgba(40,180,220,0.55)', '--h1': '#40C0D0', '--h2': '#106878', '--hk': '#043040',
+              '--a1': '#2040A8', '--a2': '#081848', '--ak': '#040824' } },
+    { id: 'sombra', name: 'Clan de la Sombra', tag: 'Oscuro', price: 3.99,
+      blurb: 'Runic obsidian and spectral chains — shadow and silence consume the board.',
+      vars: { '--sq-light': '#686868', '--sq-dark': '#0C0C0C', '--frame': '#060406',
+              '--edge': 'rgba(140,60,200,0.55)', '--h1': '#A8A8C0', '--h2': '#505070', '--hk': '#202030',
+              '--a1': '#40A040', '--a2': '#184818', '--ak': '#0a200a' } },
   ];
   const skinById = (id) => SKINS.find(s => s.id === id) || SKINS[0];
 
@@ -118,12 +154,14 @@
   function saveGames(g) { write(LS.games, g); }
   function getGame(id) { return games()[id] || null; }
   function newId() { return 'g' + Math.random().toString(36).slice(2, 8); }
-  function createGame(difficulty) {
+  function createGame(difficulty, rulesKey) {
     const g = games();
     const id = newId();
+    const rk    = rulesKey || 'english';
+    const rules = global.Damas.RULES[rk] || global.Damas.RULES.english;
     g[id] = {
-      id, difficulty, status: 'in_progress', toMove: 'human',
-      board: global.Damas.initialBoard(), history: [],
+      id, difficulty, rulesKey: rk, status: 'in_progress', toMove: 'human',
+      board: global.Damas.initialBoard(rules), history: [],
       createdAt: Date.now(), updatedAt: Date.now(), moveCount: 0,
     };
     saveGames(g);
@@ -183,26 +221,29 @@
   /* ---- static (non-interactive) board renderer for previews ---- */
   function renderStaticBoard(el, opts) {
     opts = opts || {};
-    const skin = opts.skin || 'emerald';
+    const skin   = opts.skin   || 'emerald';
     const finish = opts.finish || 'glossy';
-    const board = opts.board || global.Damas.initialBoard();
+    const rules  = opts.rules  || global.Damas.RULES.english;
+    const S      = rules.boardSize;
+    const board  = opts.board  || global.Damas.initialBoard(rules);
     el.classList.add('board');
     if (opts.mini) el.classList.add('mini');
+    el.setAttribute('data-size', S);
     el.innerHTML = '';
     const sq = document.createElement('div'); sq.className = 'squares';
-    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    for (let r = 0; r < S; r++) for (let c = 0; c < S; c++) {
       const d = document.createElement('div');
       d.className = 'sq ' + (global.Damas.isDark(r, c) ? 'dark' : 'light');
       sq.appendChild(d);
     }
     el.appendChild(sq);
     const pl = document.createElement('div'); pl.className = 'pieces';
-    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    for (let r = 0; r < S; r++) for (let c = 0; c < S; c++) {
       const p = board[r][c]; if (!p) continue;
       const pc = document.createElement('div');
       pc.className = 'piece ' + p.player + (p.king ? ' king' : '');
       pc.dataset.finish = finish;
-      pc.style.top = (r / 8 * 100) + '%'; pc.style.left = (c / 8 * 100) + '%';
+      pc.style.top = (r / S * 100) + '%'; pc.style.left = (c / S * 100) + '%';
       const disc = document.createElement('span'); disc.className = 'disc';
       if (p.king) { const cr = document.createElement('span'); cr.className = 'crown'; cr.textContent = '♔'; disc.appendChild(cr); }
       pc.appendChild(disc); pl.appendChild(pc);

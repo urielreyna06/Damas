@@ -5,6 +5,8 @@
 
 > **Al retomar el proyecto:** leer también `HANDOFF_PROMPT.md` (estado actual + tareas pendientes)
 > y `SESSION_LOG.md` (diario cronológico de cambios y bugs resueltos por sesión).
+> **Para estudiar/entender el proyecto a fondo** (arquitectura, por qué cada herramienta,
+> conceptos, bugs y casos borde, nivel intro + técnico): `GUIA_DIDACTICA.md`.
 > **Ubicación actual:** `/mnt/a/Claude/Projects/Damas/` (WSL) = `A:\Claude\Projects\Damas\` (Windows).
 
 ---
@@ -275,6 +277,21 @@ cd frontend   && bun run dev   # puerto 3000
 - **HMR WebSocket en Docker:** Vinxi asigna el WebSocket HMR a un puerto aleatorio que Docker no expone.
   Se fijó a 24678 en `app.config.ts` (`server.hmr.port` + `clientPort`) y se expone en `docker-compose.yml`.
   Cambios a `app.config.ts` requieren rebuild: `docker compose build frontend && docker compose up -d frontend`.
+- **HMR WebSocket 400 — ruido de consola ESPERADO (no es bug):** En el browser aparecen 4 errores:
+  `ws://localhost:24678/_build/?token=... → 400`, `[vite] failed to connect to websocket`,
+  `WebSocket closed without opened`, y un `404` de `/@react-refresh`. Causa raíz: Vinxi levanta
+  DOS dev servers (client + SSR) que comparten la config `server.hmr`; el segundo no consigue el
+  puerto → log del servidor `WebSocket server error: Port undefined is already in use` → el browser
+  conecta al WS equivocado → 400. **Impacto NULO:** solo afecta hot-reload en vivo, que este
+  frontend NO usa (sin volume mounts en WSL2 → cada cambio requiere rebuild). NO intentar
+  "arreglarlo" tocando `server.hmr` sin necesidad real — arriesga desestabilizar el stack
+  TanStack 1.99.x. Junto con `<Scripts/> found no manifest`, `__clerk_init_state=undefined` y
+  `loaderData:{"$undefined":0}`, son todos warnings de dev mode inofensivos.
+- **`optimizeDeps.include` en `app.config.ts` (DX):** Sin pre-bundle explícito, Vite descubre las
+  deps críticas (react, react-dom, @tanstack/*, @clerk/tanstack-start) de forma lazy en la PRIMERA
+  visita del browser → emite `optimized dependencies changed. reloading` → full-page reload que
+  parpadea y reinicia Clerk. El bloque `optimizeDeps.include` las pre-bundlea al arrancar el
+  container, eliminando ese reload. NO elimina el WS 400 (causa distinta, ver arriba).
 - **Hot reload SSR en WSL volumes:** inotify en WSL2 es inestable para Vinxi SSR.
   Si un cambio en `__root.tsx` u otras rutas SSR no se refleja, hacer `docker compose restart frontend`.
 - **Hidratación del cliente (CRÍTICO):** `frontend/src/client.tsx` DEBE llamar
@@ -286,6 +303,24 @@ cd frontend   && bun run dev   # puerto 3000
   `await constructEventAsync(...)`, NO `constructEvent` (sync). El `SubtleCryptoProvider` de Stripe
   bajo Bun solo computa HMAC async; el sync lanza excepción → toda firma válida cae como
   `400 INVALID_SIGNATURE` y los desbloqueos de skin (CA-17) se pierden en silencio.
+- **`getToken` de Clerk NUNCA en deps de useCallback/useEffect (CRÍTICO):** La función
+  `getToken` de `useAuth()` puede cambiar de referencia entre renders (especialmente durante
+  inicialización y token-refresh de Clerk). Incluirla en `[…, getToken]` recrea el callback
+  en cada render → el `useEffect` dependiente refirma → múltiples fetches concurrentes y
+  race conditions → puede causar `loading=true` infinito. Patrón correcto: llamar `await getToken()`
+  *dentro* del callback al momento de invocar (no capturarla). Añadir comentario
+  `// eslint-disable-next-line react-hooks/exhaustive-deps` para silenciar el linter.
+- **`<Outlet/>` en rutas padre con hijos (CRÍTICO — bug "no puedo entrar a la partida"):**
+  `/play/$gameId` es ruta HIJA de `/play` en el enrutado file-based de TanStack
+  (`play.$gameId.tsx` se anida bajo `play.tsx`; ver `routeTree.gen.ts`:
+  `PlayGameIdRoute.getParentRoute = () => PlayRoute`). Para que un hijo se monte, el componente
+  padre DEBE renderizar `<Outlet/>`. `play.tsx` renderiza el lobby, así que cede al hijo con
+  `const childMatches = useChildMatches(); if (childMatches.length > 0) return <Outlet />;`
+  (tablero cuando hay hijo activo, lobby solo en `/play` exacto). **Si se quita ese `<Outlet/>`,
+  al pulsar "Continuar" la URL cambia a `/play/:id` pero el tablero NUNCA monta** (no se dispara
+  `GET /api/games/:id`) → se percibe como carga infinita. NO confundir con bugs de Clerk/loading.
+  Verificable: el golden path de acceso solo se prueba en browser CON sesión real
+  (`e2e/golden-cookies.mjs` inyecta cookies de Clerk; `verify-login.mjs` solo toca la landing).
 
 ---
 

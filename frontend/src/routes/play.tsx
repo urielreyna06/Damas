@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, Outlet, useChildMatches } from "@tanstack/react-router";
 import { useAuth, SignInButton } from "@clerk/tanstack-start";
 import { useEffect, useState } from "react";
 import { listGames, createGame, deleteGame } from "../lib/api";
@@ -18,6 +18,10 @@ const DIFFICULTIES: { id: Difficulty; name: string; desc: string }[] = [
 function PlayPage() {
   const { isSignedIn, getToken } = useAuth();
   const navigate = useNavigate();
+  // `/play/$gameId` is a child route of `/play`. Without rendering <Outlet/> the child
+  // (the game board) never mounts — the lobby just stays on screen. Yield to the child
+  // when one is active so the board renders; show the lobby only at exactly /play.
+  const childMatches = useChildMatches();
   const [games, setGames] = useState<Game[]>([]);
   const [loadingGames, setLoadingGames] = useState(true);
   const [creating, setCreating] = useState<Difficulty | null>(null);
@@ -29,6 +33,9 @@ function PlayPage() {
     void loadGames();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn]);
+
+  // A child route (e.g. /play/$gameId) is active → render it instead of the lobby.
+  if (childMatches.length > 0) return <Outlet />;
 
   async function loadGames() {
     setLoadingGames(true);
@@ -110,7 +117,7 @@ function PlayPage() {
               className="diff-card"
               data-diff={d.id}
               onClick={() => void handleCreate(d.id)}
-              disabled={creating !== null}
+              disabled={creating === d.id}
             >
               <span className={`badge badge-${d.id}`}>
                 <span className="dot" />

@@ -26,9 +26,17 @@ function GamePage() {
   const [activeTheme, setActiveTheme] = useState<Theme | null>(null);
 
   const fetchGame = useCallback(async () => {
+    setError(null);
+    setLoading(true);
     try {
       const token = await getToken();
-      const g = await getGame(gameId, token ?? undefined);
+      // Signed-in but no token means Clerk's session isn't ready (SSR state is
+      // not wired, so getToken can briefly resolve null). Surface it instead of
+      // firing an unauthenticated request that 401s with a cryptic message.
+      if (!token) {
+        throw new Error("Tu sesión aún no está lista. Pulsa Reintentar.");
+      }
+      const g = await getGame(gameId, token);
       setGame(g);
       if (g.status === "in_progress" && g.turn === g.humanSide) {
         const moves = await getLegalMoves(gameId, token ?? undefined);
@@ -41,7 +49,11 @@ function GamePage() {
     } finally {
       setLoading(false);
     }
-  }, [gameId, getToken]);
+  // getToken is intentionally excluded from deps: it's called at invoke time, not captured.
+  // Including it causes fetchGame to be recreated on every Clerk re-render, leading to
+  // repeated fetches and potential infinite loading.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId]);
 
   // Wait for Clerk before fetching — avoids 401 when getToken() returns null on first render
   useEffect(() => {
@@ -49,6 +61,23 @@ function GamePage() {
     if (!isSignedIn) { void navigate({ to: "/play" }); return; }
     void fetchGame();
   }, [fetchGame, isLoaded, isSignedIn, navigate]);
+
+  // Loading watchdog: the skeleton must never be infinite. If Clerk's getToken()
+  // or the initial fetch hasn't settled within the timeout, drop out of the
+  // loading state with an actionable error + Reintentar instead of a dead spinner.
+  useEffect(() => {
+    if (!loading) return;
+    const t = setTimeout(() => {
+      setLoading(false);
+      setError((prev) =>
+        prev ?? "La partida tardó demasiado en cargar. Tu sesión puede no haberse inicializado del todo. Pulsa Reintentar.");
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [loading]);
+
+  const retry = useCallback(() => {
+    void fetchGame();
+  }, [fetchGame]);
 
   // Fetch active theme once Clerk is ready
   useEffect(() => {
@@ -62,7 +91,8 @@ function GamePage() {
         // non-fatal — default skin renders correctly
       }
     })();
-  }, [getToken, isLoaded, isSignedIn]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, isSignedIn]);
 
   const handleMoveSend = useCallback(
     async (path: Square[]) => {
@@ -90,7 +120,8 @@ function GamePage() {
         setIsAiThinking(false);
       }
     },
-    [game, gameId, getToken]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [game, gameId]
   );
 
   const handlePlayAgain = useCallback(async () => {
@@ -102,7 +133,8 @@ function GamePage() {
     } catch {
       navigate({ to: "/play" });
     }
-  }, [game, getToken, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game, navigate]);
 
   const handleAbandon = useCallback(async () => {
     try {
@@ -112,7 +144,8 @@ function GamePage() {
       // best-effort; navigate away regardless
     }
     navigate({ to: "/play" });
-  }, [gameId, getToken, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, navigate]);
 
   if (loading) {
     return (
@@ -128,9 +161,14 @@ function GamePage() {
         <div className="card card-pad" style={{ maxWidth: 480 }}>
           <h2 className="serif" style={{ fontSize: 24 }}>Algo salió mal</h2>
           <p className="muted" style={{ marginTop: 8 }}>{error}</p>
-          <button className="btn btn-ghost" style={{ marginTop: 16 }} onClick={() => navigate({ to: "/play" })}>
-            Volver a partidas
-          </button>
+          <div className="row gap-12" style={{ marginTop: 16 }}>
+            <button className="btn btn-gold" onClick={retry}>
+              Reintentar
+            </button>
+            <button className="btn btn-ghost" onClick={() => navigate({ to: "/play" })}>
+              Volver a partidas
+            </button>
+          </div>
         </div>
       </div>
     );

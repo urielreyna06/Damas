@@ -1,8 +1,9 @@
 # Handoff Prompt — Damas PvE
 
 > Copia el bloque de PASO 2 y pégalo como primer mensaje en la próxima sesión de Claude Code.
-> Estado actualizado: **2026-06-07**
+> Estado actualizado: **2026-06-12**
 > Ver `SESSION_LOG.md` para el diario completo de cambios por sesión.
+> Para estudiar el proyecto a fondo: `GUIA_DIDACTICA.md`.
 
 ---
 
@@ -26,7 +27,7 @@ SESSION_LOG.md tiene el diario de todo lo corregido en sesiones anteriores.
 
 El proyecto está en /mnt/a/Claude/Projects/Damas (WSL) = A:\Claude\Projects\Damas (Windows).
 
-## Estado actual (al 2026-06-07)
+## Estado actual (al 2026-06-08)
 
 Proyecto Damas PvE — monorepo Bun con 4 workspaces.
 
@@ -35,63 +36,106 @@ Proyecto Damas PvE — monorepo Bun con 4 workspaces.
 - ai-service        → Hono stateless (puerto 3002)
 - frontend          → TanStack Start 1.99.x + vinxi 0.5.1 (puerto 3000)
 
-## ✅ Fixes aplicados en sesión 2026-06-04
+## ✅ Sesión 2026-06-08 (parte 3) — Dificultad de la IA bajada en todos los niveles
 
-1. **503 RESUELTO:** Volume mounts del frontend eliminados de docker-compose.yml.
-   Docker Desktop en WSL2 no puede acceder a /mnt/a/ para bind mounts — montaba
-   /app/frontend/src/ vacío → 503. Fix: frontend sin volumes. Cambios requieren rebuild.
+`ai-service/src/minimax.ts` → `MAX_DEPTH`: easy 2→**1**, medium 4→**3**, hard 6→**5** (−1 ply
+por nivel). Sin tocar pesos heurísticos ni time limit. Tests 6/6, ai-service reconstruido y healthy.
+Reversible: restaurar 2/4/6 + rebuild ai-service. Ver SESSION_LOG.md (parte 3).
 
-2. **Skins preview RESUELTO:** seed.ts no fijaba _id → MongoDB generaba ObjectIds.
-   THEME_ID_TO_SKIN mapea por slug (classic_wood) → nunca matcheaba → todas emerald.
-   Fix: seed.ts con _id: "classic_wood" etc. + drop/recreate collection.
-   GET /api/themes devuelve "_id":"classic_wood" etc. ✅
+## ✅ Sesión 2026-06-08 (parte 2) — Fix ACCESO A PARTIDA (`<Outlet/>` faltante) — ¡YA SE PUEDE JUGAR!
 
-3. **Game loading RESUELTO:** play.$gameId.tsx llamaba fetchGame() sin esperar isLoaded
-   de Clerk → getToken() podía colgar → skeleton infinito.
-   Fix: guard isLoaded/isSignedIn en los useEffect de la game page.
+**Causa raíz (no era Clerk ni loading):** `/play/$gameId` es ruta HIJA de `/play`, pero
+`play.tsx` no renderizaba `<Outlet/>` → al pulsar "Continuar" la URL cambiaba pero el tablero
+(`GamePage`) nunca montaba (ni se disparaba `GET /api/games/:id`). El usuario lo veía como carga
+infinita.
 
-## ✅ Verificado en sesiones anteriores
+**Fix (`frontend/src/routes/play.tsx`, branch `fix/match-loading`):** cede al hijo con
+`const childMatches = useChildMatches(); if (childMatches.length > 0) return <Outlet/>;`.
+Más fix A defensivo en `play.$gameId.tsx` (watchdog 8s + Reintentar + guard token nulo).
 
-- Hidratación del cliente: client.tsx hace hydrateRoot() — login y CSS funcionan.
-- Typechecks: tsc --noEmit EXIT:0 en los 3 servicios.
-- Checkout Stripe funcional: sesión real creada.
-- Webhook Stripe: constructEventAsync bajo Bun → firma válida → 200 → UserSkin (CA-17).
-- React preamble y HMR WebSocket (puerto 24678) configurados.
-- UI dark luxury: 6 pantallas rediseñadas, CSS en frontend/src/styles/.
-- 16/16 HTTP audit pass · http://localhost:3000 → 200
-- verify-login.mjs: loginVisible:true, clerkGlobal:true, CSS aplicado.
+**Verificado EN VIVO** con sesión real (cookies de Clerk inyectadas, sin Google/CAPTCHA):
+acceso → tablero renderiza; jugada real 5,0→4,1 → `POST /moves` 200 → IA responde →
+"Tus movimientos: 1". HTTP audit 16/16, typecheck EXIT 0. Ver `MATCH_ACCESS_FIX.md`.
+**Requiere rebuild frontend (HECHO):** `docker compose build frontend && docker compose up -d frontend`.
+Inconsistencia menor pendiente: panel "Últimos movimientos" dice "Sin movimientos aún" con contador=1 (cosmético).
 
-## ⚠️ IMPORTANTE — Rebuild necesario al retomar
+## ✅ Sesión 2026-06-08 — Diagnóstico consola + optimizeDeps (rebuild HECHO)
 
-Los cambios de la sesión 2026-06-04 fueron buildeados y están en las imágenes Docker.
-Si los containers están parados, basta con `docker compose up -d`.
-Si las imágenes se perdieron o hay duda, hacer rebuild completo (ver comandos abajo).
+**Hallazgo principal:** la app YA estaba 100% funcional. Los 4 "errores conocidos" de
+consola son TODOS de HMR/dev mode, no bugs de código. Verificado tras rebuild:
+HTTP audit 16/16, loginVisible:true, clerkGlobal:true, CSS ok.
+
+**Fix aplicado (`app.config.ts` → `optimizeDeps.include`):** pre-bundle de react, react-dom,
+@tanstack/*, @clerk/tanstack-start. **Logró:** eliminar el `optimized dependencies changed.
+reloading` → ya no hay full-page reload en primera visita (mejora DX). **NO logró:** el
+WebSocket HMR 400 PERSISTE — causa raíz distinta (Vinxi levanta 2 dev servers que comparten
+la config `server.hmr`; el segundo falla con "Port undefined is already in use"). El WS 400
+es cosmético: el frontend NO usa HMR (sin volume mounts → rebuild por cambio, ver CLAUDE.md §9).
+
+## ✅ Fixes aplicados en sesión 2026-06-07
+
+1. **Gameplay carga infinita RESUELTO:** play.$gameId.tsx incluía getToken (Clerk)
+   en los deps de los 4 useCallback (fetchGame, handleMoveSend, handlePlayAgain,
+   handleAbandon) y un useEffect. getToken puede cambiar referencia entre renders,
+   recreando callbacks → re-firando effects → race conditions → loading=true permanente.
+   Fix: getToken eliminado de todos los deps (se invoca dentro del callback, no se captura).
+   Mismo patrón corregido en shop.tsx (owned badges effect).
+
+2. **UX/UI audit:**
+   - EndModal: agregado botón × + backdrop click para cerrar sin navegar.
+   - play.tsx: disabled={creating === d.id} — ya no bloquea todos los botones.
+   - me.tsx: success message auto-limpia en 3 segundos.
+   - globals.css: position: relative en .modal.
+
+3. **Skins verificadas OK:** Las 5 skins (Classic Wood, Neon Glow, Marble Board,
+   Vector Classic, Retro Pixel) muestran previews visualmente únicas en /shop.
+   Screenshot confirmado. El mecanismo CSS (vars inline + board.css) funciona correctamente.
+
+## ✅ Fixes de sesiones anteriores (ver SESSION_LOG.md para detalle)
+
+- 503 RESUELTO: Volume mounts eliminados del frontend en docker-compose.yml.
+- Seed con _id slugs: GET /api/themes devuelve "_id":"classic_wood" etc.
+- Guard isLoaded/isSignedIn en play.$gameId.tsx.
+- Hidratación cliente: hydrateRoot() en client.tsx.
+- React preamble + HMR WebSocket (24678) configurados.
+- Webhook Stripe: constructEventAsync (Bun-compatible).
+- Checkout Stripe funcional. Typechecks EXIT:0.
+- UI dark luxury: 6 pantallas + CSS en frontend/src/styles/.
+- 16/16 HTTP audit pass · verify-login: loginVisible:true, clerkGlobal:true.
+
+## ⚠️ IMPORTANTE — Al retomar
+
+Rama actual: `feature/damas-overhaul`. Último commit relevante: `2cec37f` (damas.zip actualizado).
+Los fixes de frontend (optimizeDeps, Outlet, watchdog) están en el commit `2aaf424` de esta rama.
+Si los containers están parados, basta `docker compose up -d`.
+NOTA sobre HMR: tras arrancar el frontend, espera ~10-15s a que Vite pre-bundlee antes de
+correr el audit (si no, da `ERR_SOCKET_NOT_CONNECTED` por timing, no es un fallo real).
+`verify-login.mjs` mostrará errorCount:4 — son los 4 errores HMR cosméticos esperados.
 
 ## ▶️ Primeros pasos al retomar
 
 1. Arrancar stack:
    cd /mnt/a/Claude/Projects/Damas && docker compose up -d
 2. Verificar: bun run e2e/http-audit.ts   # debe dar 16/16
-3. Si MongoDB está vacío (themes 0): docker exec damas-backend bun run /app/backend/src/db/seed.ts
-4. Verificar que GET /api/themes devuelve _id slug (no ObjectId):
+3. Si MongoDB está vacío: docker exec damas-backend bun run /app/backend/src/db/seed.ts
+4. Confirmar IDs de themes:
    curl -s http://localhost:3001/api/themes | grep '"_id"'
-   # Esperado: "_id":"classic_wood" etc.
+   # Esperado: "_id":"classic_wood" etc. (slugs, NO ObjectIds)
 
-## ▶️ Golden path manual en el browser (pendiente)
+## ▶️ Golden path manual (pendiente — única tarea real)
 
-El stack funciona end-to-end y está verificado por automatización.
-Falta la prueba manual del flujo completo:
-
-Para el webhook de Stripe, abrir una terminal aparte:
+En terminal aparte antes de empezar:
   stripe listen --forward-to localhost:3001/api/stripe/webhook
 
-Luego en el browser:
+Flujo en el browser:
 1. http://localhost:3000 → Ctrl+Shift+R → "Iniciar sesión y jugar" (Clerk modal)
-2. /play → crear partida Fácil → jugar vs IA → verificar fin de partida
-3. /leaderboard → ver la partida ganada en el tab correcto
-4. /shop → cada skin debe mostrar su preview ÚNICA (no todas emerald)
-5. /shop → Comprar skin → 4242 4242 4242 4242, fecha futura, cualquier CVC
-6. Webhook desbloquea la skin → activar en /me → skin activa en próxima partida
+2. /play → crear partida Fácil → jugar vs IA → tablero debe cargar SIN skeleton infinito
+3. Fin de partida → modal debe tener botón × para cerrar sin navegar
+4. /leaderboard → ver la partida ganada en el tab correcto
+5. /shop → cada skin debe mostrar su preview ÚNICA (Classic Wood ≠ Neon Glow ≠ Marble etc.)
+6. /shop → Comprar skin → 4242 4242 4242 4242, fecha futura, cualquier CVC
+7. Webhook desbloquea la skin → activar en /me → skin activa en próxima partida
+8. /play → nueva partida → tablero debe mostrar la skin activada
 
 ## Puertos Docker expuestos
 
@@ -103,7 +147,7 @@ Luego en el browser:
 | 3002   | AI Service         |
 | 27017  | MongoDB            |
 
-## Comandos de arranque y rebuild
+## Comandos de rebuild y verificación
 
 # Arranque normal (imágenes ya construidas):
 docker compose up -d
@@ -113,26 +157,23 @@ docker compose ps
 docker logs damas-frontend --tail=20
 docker logs damas-backend  --tail=10
 
-# REBUILD — necesario cuando cambia código fuente (no hay volume mounts):
-# Frontend (cambios en frontend/src, frontend/public, packages/shared):
+# REBUILD — necesario cuando cambia código en frontend/src, public, o packages/shared:
 docker compose build frontend && docker compose up -d frontend
 
-# Backend (cambios en backend/src, incluyendo seed.ts):
+# REBUILD backend (cambios en backend/src):
 docker compose build backend && docker compose up -d backend
 
-# Rebuild completo desde cero (si algo está muy roto):
+# Rebuild completo desde cero:
 docker compose build --no-cache && docker compose up -d
 docker exec damas-backend bun run /app/backend/src/db/seed.ts
 
-# Seed (ejecutar DESPUÉS de que el backend esté healthy):
+# Seed (cuando MongoDB esté vacío o themes sin slugs):
 docker exec damas-backend bun run /app/backend/src/db/seed.ts
-# El seed hace drop+recreate de themes y userSkins.
-# Resultado esperado: 5 themes con _id slug (classic_wood, neon_glow, etc.)
 
 # Auditoría HTTP (16 checks, sin browser):
 cd /mnt/a/Claude/Projects/Damas && bun run e2e/http-audit.ts
 
-# Verificación de hidratación (browser headless, requiere Playwright):
+# Verificación de hidratación (browser headless):
 cd /mnt/a/Claude/Projects/Damas && node e2e/verify-login.mjs
 
 ## Tests
@@ -148,19 +189,51 @@ docker exec damas-ai-service bun test
 
 ## ❌ Pendiente — en orden de prioridad
 
-### 1. Golden path manual en el browser
-Automatización verde. Falta probar manualmente login, gameplay, leaderboard,
-compra de skin con Stripe y activación en /me.
+### 0. ✅ COMPLETADO (2026-06-11) — Overhaul webapp standalone
 
-### 2. INV-01 — Assets SVG reales (cosmético, no bloquea MVP)
+**Commit:** `d1f254d` (branch `feature/damas-overhaul`)
+**Archivos:** engine.js, game.jsx, shared.js, board.css, play.html (+477 / −233 líneas)
+
+- **Fase 1 engine.js:** RULES preset (english/spanish/international), boardSize 8/10,
+  damas voladoras, forceMaximumCapture, promoteDuringCapture, aStarGreedy,
+  aiMove remapeado (easy=random, medium=aStarGreedy, hard=minimax-d3, expert=minimax-d4).
+- **Fase 2 play.html:** 4ª tarjeta Expert "Guardián Ancestral", selector de variante
+  (Inglesas/Españolas/Internacional 10×10), handler wired a Store.createGame.
+- **Fase 3 shared.js:** createGame(difficulty, rulesKey), renderStaticBoard dinámico.
+- **Fase 4 game.jsx:** Board/Piece S=rules.boardSize, sqName y coords dinámicos
+  (FILES[0..9] para 10×10), diffMeta expert, bitácora acumulada en playMove + exportar .txt.
+- **Fase 5 board.css:** repeat(10,1fr) y piece 10% para data-size="10".
+
+---
+
+### 1. ✅ COMPLETADO (2026-06-11) — Dual-algorithm AI (A* easy/medium + Minimax hard/expert)
+
+**Commit:** `3a45dfd` (branch `feature/damas-overhaul`)
+**Archivos:** ai-service/src/astar.ts (nuevo), minimax.ts, routes.ts, ai.test.ts, games.ts, types.ts
+
+- **easy / medium:** A* greedy — rápido, subóptimo, comportamiento humano creíble.
+- **hard / expert:** Minimax + alfa-beta, profundidad 5 y 6 respectivamente.
+- Añadida dificultad **Expert** (depth 6) en shared types y backend.
+- Tests 6/6 pasan. CA-09 (stateless) y CA-10 (< 2s p95 hard) mantenidos.
+
+**Nota infra para abrir el PR:** actualmente **no hay git remote** configurado. Antes de publicar
+el repo en GitHub, hacer **scrub de secretos** (`SESSION_LOG.md` ~línea 718 tiene un `whsec_` real;
+`.env` tiene claves Clerk/Stripe). Hay una rama local `docs/ai-algorithm-astar-todo` con este TODO.
+
+---
+
+### 2. Golden path — solo falta el tramo de Stripe
+✅ Acceso a partida y ciclo de jugada (humano→IA) VERIFICADOS en vivo (sesión 2026-06-08 parte 2).
+Falta el tramo de monetización: compra de skin con Stripe (requiere `stripe listen
+--forward-to localhost:3001/api/stripe/webhook`), webhook desbloquea, activar en /me, skin en partida.
+
+### 3. INV-01 — Assets SVG reales (cosmético, no bloquea MVP)
 Los SVG en frontend/public/themes/{skin_id}/ son placeholders.
-Las skins ya muestran CSS vars únicas (board y piezas correctamente coloreados).
-Para producción: reemplazar con assets reales (pngimg.com, itch.io, vecteezy.com).
-Convención: {color}-{kind}.svg — red-man, black-man, red-king, black-king, preview.
+Las skins muestran CSS vars únicos correctamente (verificado con screenshot).
+Para producción: reemplazar con assets reales. Convención: red-man, black-man, red-king, black-king.
 
-### 3. Stripe webhook en producción
+### 4. Stripe webhook en producción
 Configurar endpoint en Stripe dashboard apuntando al dominio de producción.
-Hasta entonces: stripe listen para desarrollo local.
 
 ## Reglas que NUNCA se rompen
 
@@ -173,8 +246,13 @@ Hasta entonces: stripe listen para desarrollo local.
 7. NO tocar las versiones de TanStack en package.json sin leer SESSION_LOG.md.
 8. El bootstrap en __root.tsx DEBE instalar el preamble de React antes del import().
 9. seed.ts usa _id slugs (classic_wood etc.) — NO cambiar a ObjectIds.
-10. NO agregar volume mounts al frontend en docker-compose.yml — /mnt/a/ no es
-    accesible desde Docker Desktop en WSL2.
+10. NO agregar volume mounts al frontend en docker-compose.yml — /mnt/a/ no funciona en WSL2.
+11. getToken de Clerk NUNCA va en arrays de deps de useCallback/useEffect — se invoca
+    dentro del callback, no se captura. Incluirlo hace que los callbacks se recreen en cada
+    render de Clerk → race conditions y potencial loading infinito.
+12. play.tsx DEBE ceder a `<Outlet/>` cuando hay ruta hija activa (`useChildMatches`).
+    `/play/$gameId` es hija de `/play`; sin `<Outlet/>` el tablero nunca monta y "Continuar"
+    parece carga infinita. NO quitar ese return de Outlet. Ver CLAUDE.md §9.
 
 ## Si encuentras algo no cubierto
 

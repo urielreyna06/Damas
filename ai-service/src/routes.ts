@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AiMoveRequest, AiMoveResponse } from "../../packages/shared/src/types.ts";
 import { findBestMove } from "./minimax.ts";
+import { findBestMoveAstar } from "./astar.ts";
 
 export const router = new Hono();
 
@@ -26,15 +27,19 @@ router.post("/internal/ai/move", async (c) => {
     return c.json({ code: "BAD_REQUEST", message: "sideToMove must be 'red' or 'black'" }, 400);
   }
 
-  if (difficulty !== "easy" && difficulty !== "medium" && difficulty !== "hard") {
-    return c.json({ code: "BAD_REQUEST", message: "difficulty must be 'easy', 'medium', or 'hard'" }, 400);
+  if (difficulty !== "easy" && difficulty !== "medium" && difficulty !== "hard" && difficulty !== "expert") {
+    return c.json({ code: "BAD_REQUEST", message: "difficulty must be 'easy', 'medium', 'hard', or 'expert'" }, 400);
   }
 
   const start = Date.now();
-  let result: ReturnType<typeof findBestMove>;
+  let result: ReturnType<typeof findBestMove> | ReturnType<typeof findBestMoveAstar>;
 
   try {
-    result = findBestMove(board, sideToMove, difficulty, rules, 1800);
+    if (difficulty === "easy" || difficulty === "medium") {
+      result = findBestMoveAstar(board, sideToMove, difficulty, rules);
+    } else {
+      result = findBestMove(board, sideToMove, difficulty, rules, 1800);
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error during move generation";
     return c.json({ code: "NO_MOVES", message }, 422);

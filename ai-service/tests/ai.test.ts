@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { findBestMove } from "../src/minimax.ts";
+import { findBestMoveAstar } from "../src/astar.ts";
 import { initialBoard } from "../src/moveGen.ts";
 import type { Board } from "../../packages/shared/src/types.ts";
 
@@ -12,9 +13,9 @@ const defaultRules = {
 // ─── CA-09: Stateless — no MongoDB dependency ─────────────────────────────────
 
 describe("CA-09: AI Service is stateless (no DB dependency)", () => {
-  it("findBestMove resolves without any database import or error", () => {
+  it("findBestMoveAstar resolves without any database import or error (easy)", () => {
     const board = initialBoard();
-    const result = findBestMove(board, "red", "easy", defaultRules, 1800);
+    const result = findBestMoveAstar(board, "red", "easy", defaultRules);
 
     expect(result).toBeDefined();
     expect(result.move).toBeDefined();
@@ -23,18 +24,28 @@ describe("CA-09: AI Service is stateless (no DB dependency)", () => {
     expect(Array.isArray(result.move.captures)).toBe(true);
     expect(typeof result.move.promotion).toBe("boolean");
     expect(typeof result.score).toBe("number");
-    expect(typeof result.depth).toBe("number");
-    expect(result.depth).toBeGreaterThanOrEqual(1);
+    expect(result.depth).toBe(1);
   });
 });
 
-// ─── CA-10: Response time < 2s for hard difficulty ───────────────────────────
+// ─── CA-10: Response time < 2s for hard/expert difficulty ───────────────────────────
 
-describe("CA-10: findBestMove completes within 2 seconds on hard difficulty", () => {
+describe("CA-10: findBestMove completes within 2 seconds on hard/expert difficulty", () => {
   it("hard difficulty on initial board finishes in < 2000ms", () => {
     const board = initialBoard();
     const start = Date.now();
     const result = findBestMove(board, "red", "hard", defaultRules, 1800);
+    const elapsed = Date.now() - start;
+
+    expect(elapsed).toBeLessThan(2000);
+    expect(result.move).toBeDefined();
+    expect(result.move.path.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("expert difficulty on initial board finishes in < 2000ms", () => {
+    const board = initialBoard();
+    const start = Date.now();
+    const result = findBestMove(board, "red", "expert", defaultRules, 1800);
     const elapsed = Date.now() - start;
 
     expect(elapsed).toBeLessThan(2000);
@@ -64,7 +75,7 @@ describe("Bonus: AI selects a capture when one is available", () => {
     board[5]![2] = { side: "red", kind: "man" };
     board[4]![3] = { side: "black", kind: "man" };
 
-    const result = findBestMove(board, "red", "medium", defaultRules, 1800);
+    const result = findBestMoveAstar(board, "red", "medium", defaultRules);
     expect(result.move.captures.length).toBeGreaterThan(0);
   });
 });

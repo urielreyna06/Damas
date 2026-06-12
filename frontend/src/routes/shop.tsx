@@ -47,7 +47,8 @@ function ShopPage() {
         // not signed in or fetch failed — no owned badges
       }
     })();
-  }, [getToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handlePurchase(themeId: string) {
     setPurchasing(themeId);

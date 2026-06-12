@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { GameStatus } from "@damas/shared";
 
 interface EndModalProps {
@@ -35,12 +36,30 @@ const COPY: Record<string, { eyebrow: string; title: string; sub: string; color:
 
 /** End-of-game modal: Victory / Defeat / Draw with CTAs. */
 export function EndModal({ status, onPlayAgain, onViewLeaderboard }: EndModalProps) {
-  if (status === "in_progress") return null;
+  const [dismissed, setDismissed] = useState(false);
+  if (status === "in_progress" || dismissed) return null;
   const copy = COPY[status] ?? COPY.draw!;
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={copy.title}>
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label={copy.title}
+      onClick={(e) => { if (e.target === e.currentTarget) setDismissed(true); }}
+    >
       <div className="modal">
+        <button
+          aria-label="Cerrar"
+          onClick={() => setDismissed(true)}
+          style={{
+            position: "absolute", top: 14, right: 16,
+            background: "none", border: "none", cursor: "pointer",
+            color: "var(--muted)", fontSize: 22, lineHeight: 1, padding: 4,
+          }}
+        >
+          ×
+        </button>
         <div className="eyebrow">{copy.eyebrow}</div>
         <h2 className="serif" style={{ fontSize: 40, marginTop: 10, color: copy.color }}>
           {copy.title}
