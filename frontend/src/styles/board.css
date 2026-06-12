@@ -107,6 +107,118 @@
   background: repeating-linear-gradient(90deg, rgba(0,0,0,.5) 0 1px, transparent 1px 7px);
 }
 
+/* ── PNG CLAN SKINS ─────────────────────────────────────────────────────
+   Crown symbol and inner ring hidden — PNG sprites carry all visual info. */
+
+[data-skin="templo"]   .piece .crown,
+[data-skin="desierto"] .piece .crown,
+[data-skin="bosque"]   .piece .crown,
+[data-skin="hada"]     .piece .crown,
+[data-skin="fuego"]    .piece .crown,
+[data-skin="agua"]     .piece .crown,
+[data-skin="sombra"]   .piece .crown { display: none; }
+
+[data-skin="templo"]   .piece .disc::before,
+[data-skin="desierto"] .piece .disc::before,
+[data-skin="bosque"]   .piece .disc::before,
+[data-skin="hada"]     .piece .disc::before,
+[data-skin="fuego"]    .piece .disc::before,
+[data-skin="agua"]     .piece .disc::before,
+[data-skin="sombra"]   .piece .disc::before { display: none; }
+
+/* frame backgrounds */
+.dboard[data-skin="templo"]   { background-image: url('/skins/templo/frame.png');   background-size: 100% 100%; }
+.dboard[data-skin="desierto"] { background-image: url('/skins/desierto/frame.png'); background-size: 100% 100%; }
+.dboard[data-skin="bosque"]   { background-image: url('/skins/bosque/frame.png');   background-size: 100% 100%; }
+.dboard[data-skin="hada"]     { background-image: url('/skins/hada/frame.png');     background-size: 100% 100%; }
+.dboard[data-skin="fuego"]    { background-image: url('/skins/fuego/frame.png');    background-size: 100% 100%; }
+.dboard[data-skin="agua"]     { background-image: url('/skins/agua/frame.png');     background-size: 100% 100%; }
+.dboard[data-skin="sombra"]   { background-image: url('/skins/sombra/frame.png');   background-size: 100% 100%; }
+
+/* templo */
+[data-skin="templo"] .sq.light { background: url('/skins/templo/tile-light.png') center/cover no-repeat var(--sq-light); }
+[data-skin="templo"] .sq.dark  { background: url('/skins/templo/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
+[data-skin="templo"] .piece.human      .disc { background: url('/skins/templo/hero.png')      center/contain no-repeat; box-shadow: none; }
+[data-skin="templo"] .piece.human.king .disc { background: url('/skins/templo/hero-king.png') center/contain no-repeat; box-shadow: none; }
+[data-skin="templo"] .piece.ai         .disc { background: url('/skins/templo/foe.png')       center/contain no-repeat; box-shadow: none; }
+[data-skin="templo"] .piece.ai.king    .disc { background: url('/skins/templo/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+
+/* desierto */
+[data-skin="desierto"] .sq.light { background: url('/skins/desierto/tile-light.png') center/cover no-repeat var(--sq-light); }
+[data-skin="desierto"] .sq.dark  { background: url('/skins/desierto/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
+[data-skin="desierto"] .piece.human      .disc { background: url('/skins/desierto/hero.png')      center/contain no-repeat; box-shadow: none; }
+[data-skin="desierto"] .piece.human.king .disc { background: url('/skins/desierto/hero-king.png') center/contain no-repeat; box-shadow: none; }
+[data-skin="desierto"] .piece.ai         .disc { background: url('/skins/desierto/foe.png')       center/contain no-repeat; box-shadow: none; }
+[data-skin="desierto"] .piece.ai.king    .disc { background: url('/skins/desierto/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+
+/* bosque */
+[data-skin="bosque"] .sq.light { background: url('/skins/bosque/tile-light.png') center/cover no-repeat var(--sq-light); }
+[data-skin="bosque"] .sq.dark  { background: url('/skins/bosque/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
+[data-skin="bosque"] .piece.human      .disc { background: url('/skins/bosque/hero.png')      center/contain no-repeat; box-shadow: none; }
+[data-skin="bosque"] .piece.human.king .disc { background: url('/skins/bosque/hero-king.png') center/contain no-repeat; box-shadow: none; }
+[data-skin="bosque"] .piece.ai         .disc { background: url('/skins/bosque/foe.png')       center/contain no-repeat; box-shadow: none; }
+[data-skin="bosque"] .piece.ai.king    .disc { background: url('/skins/bosque/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+
+/* hada */
+[data-skin="hada"] .sq.light { background: url('/skins/hada/tile-light.png') center/cover no-repeat var(--sq-light); }
+[data-skin="hada"] .sq.dark  { background: url('/skins/hada/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
+[data-skin="hada"] .piece.human      .disc { background: url('/skins/hada/hero.png')      center/contain no-repeat; box-shadow: none; }
+[data-skin="hada"] .piece.human.king .disc { background: url('/skins/hada/hero-king.png') center/contain no-repeat; box-shadow: none; }
+[data-skin="hada"] .piece.ai         .disc { background: url('/skins/hada/foe.png')       center/contain no-repeat; box-shadow: none; }
+[data-skin="hada"] .piece.ai.king    .disc { background: url('/skins/hada/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+
+/* fuego */
+[data-skin="fuego"] .sq.light { background: url('/skins/fuego/tile-light.png') center/cover no-repeat var(--sq-light); }
+[data-skin="fuego"] .sq.dark  { background: url('/skins/fuego/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
+[data-skin="fuego"] .piece.human      .disc { background: url('/skins/fuego/hero.png')      center/contain no-repeat; box-shadow: none; }
+[data-skin="fuego"] .piece.human.king .disc { background: url('/skins/fuego/hero-king.png') center/contain no-repeat; box-shadow: none; }
+[data-skin="fuego"] .piece.ai         .disc { background: url('/skins/fuego/foe.png')       center/contain no-repeat; box-shadow: none; }
+[data-skin="fuego"] .piece.ai.king    .disc { background: url('/skins/fuego/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+
+/* agua */
+[data-skin="agua"] .sq.light { background: url('/skins/agua/tile-light.png') center/cover no-repeat var(--sq-light); }
+[data-skin="agua"] .sq.dark  { background: url('/skins/agua/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
+[data-skin="agua"] .piece.human      .disc { background: url('/skins/agua/hero.png')      center/contain no-repeat; box-shadow: none; }
+[data-skin="agua"] .piece.human.king .disc { background: url('/skins/agua/hero-king.png') center/contain no-repeat; box-shadow: none; }
+[data-skin="agua"] .piece.ai         .disc { background: url('/skins/agua/foe.png')       center/contain no-repeat; box-shadow: none; }
+[data-skin="agua"] .piece.ai.king    .disc { background: url('/skins/agua/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+
+/* sombra */
+[data-skin="sombra"] .sq.light { background: url('/skins/sombra/tile-light.png') center/cover no-repeat var(--sq-light); }
+[data-skin="sombra"] .sq.dark  { background: url('/skins/sombra/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
+[data-skin="sombra"] .piece.human      .disc { background: url('/skins/sombra/hero.png')      center/contain no-repeat; box-shadow: none; }
+[data-skin="sombra"] .piece.human.king .disc { background: url('/skins/sombra/hero-king.png') center/contain no-repeat; box-shadow: none; }
+[data-skin="sombra"] .piece.ai         .disc { background: url('/skins/sombra/foe.png')       center/contain no-repeat; box-shadow: none; }
+[data-skin="sombra"] .piece.ai.king    .disc { background: url('/skins/sombra/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+
+/* restore interactive states for clan skins */
+[data-skin="templo"]   .piece.sel .disc,
+[data-skin="desierto"] .piece.sel .disc,
+[data-skin="bosque"]   .piece.sel .disc,
+[data-skin="hada"]     .piece.sel .disc,
+[data-skin="fuego"]    .piece.sel .disc,
+[data-skin="agua"]     .piece.sel .disc,
+[data-skin="sombra"]   .piece.sel .disc
+  { box-shadow: 0 0 0 4px var(--edge), 0 10px 16px rgba(0,0,0,.5); }
+
+[data-skin="templo"]   .piece.selectable:hover .disc,
+[data-skin="desierto"] .piece.selectable:hover .disc,
+[data-skin="bosque"]   .piece.selectable:hover .disc,
+[data-skin="hada"]     .piece.selectable:hover .disc,
+[data-skin="fuego"]    .piece.selectable:hover .disc,
+[data-skin="agua"]     .piece.selectable:hover .disc,
+[data-skin="sombra"]   .piece.selectable:hover .disc
+  { box-shadow: 0 9px 14px rgba(0,0,0,.5); }
+
+[data-skin="templo"]   .piece.shake .disc,
+[data-skin="desierto"] .piece.shake .disc,
+[data-skin="bosque"]   .piece.shake .disc,
+[data-skin="hada"]     .piece.shake .disc,
+[data-skin="fuego"]    .piece.shake .disc,
+[data-skin="agua"]     .piece.shake .disc,
+[data-skin="sombra"]   .piece.shake .disc
+  { box-shadow: 0 0 0 4px rgba(229,99,77,.8), 0 6px 12px rgba(0,0,0,.5); }
+
 /* ---- game-screen overlays ---- */
 .board-overlay {
   position: absolute; inset: 0; z-index: 20;
