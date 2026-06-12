@@ -1,7 +1,7 @@
 # Handoff Prompt — Damas PvE
 
 > Copia el bloque de PASO 2 y pégalo como primer mensaje en la próxima sesión de Claude Code.
-> Estado actualizado: **2026-06-11**
+> Estado actualizado: **2026-06-12**
 > Ver `SESSION_LOG.md` para el diario completo de cambios por sesión.
 > Para estudiar el proyecto a fondo: `GUIA_DIDACTICA.md`.
 
@@ -105,7 +105,8 @@ es cosmético: el frontend NO usa HMR (sin volume mounts → rebuild por cambio,
 
 ## ⚠️ IMPORTANTE — Al retomar
 
-El fix de la sesión 2026-06-08 (`optimizeDeps` en `app.config.ts`) YA está buildeado.
+Rama actual: `feature/damas-overhaul`. Último commit relevante: `2cec37f` (damas.zip actualizado).
+Los fixes de frontend (optimizeDeps, Outlet, watchdog) están en el commit `2aaf424` de esta rama.
 Si los containers están parados, basta `docker compose up -d`.
 NOTA sobre HMR: tras arrancar el frontend, espera ~10-15s a que Vite pre-bundlee antes de
 correr el audit (si no, da `ERR_SOCKET_NOT_CONNECTED` por timing, no es un fallo real).
@@ -205,22 +206,15 @@ docker exec damas-ai-service bun test
 
 ---
 
-### 1. 🟡 Resolver algoritmo de IA (proyecto principal): A* vs Minimax (decisión + alinear código y docs)
+### 1. ✅ COMPLETADO (2026-06-11) — Dual-algorithm AI (A* easy/medium + Minimax hard/expert)
 
-**Contexto (auditado 2026-06-09, ver SESSION_LOG.md entrada de ese día):**
-- El usuario recuerda haber pedido migrar a **A\*** y haber quitado Minimax de la documentación.
-- El estado ACTUAL del repo es **Minimax + alfa-beta** (`ai-service/src/minimax.ts`). No existe
-  `astar.ts`. Toda la doc describe Minimax. En una sesión previa A\* se implementó y luego se
-  revirtió a Minimax (sin rastro en git — nada commiteado).
+**Commit:** `3a45dfd` (branch `feature/damas-overhaul`)
+**Archivos:** ai-service/src/astar.ts (nuevo), minimax.ts, routes.ts, ai.test.ts, games.ts, types.ts
 
-**Tarea para la próxima sesión (NO hacer antes de presentar):**
-1. Confirmar con el usuario la decisión definitiva: **¿A\* o Minimax?**
-2. Si **A\***: implementar `ai-service/src/astar.ts` (búsqueda adversarial), cablear `routes.ts`,
-   `calibrate.ts` y `tests/ai.test.ts`; actualizar PRD (RF-17, ADR-005), GUIA_DIDACTICA,
-   CLAUDE.md y PROJECT_BREAKDOWN para reflejar A\* y retirar Minimax. Mantener CA-09 (stateless)
-   y CA-10 (`hard` < 2s p95).
-3. Si **Minimax**: dejar todo como está (ya alineado) y cerrar formalmente la discrepancia en docs.
-4. En cualquier caso: **commitear el resultado** para que quede rastro auditable en git.
+- **easy / medium:** A* greedy — rápido, subóptimo, comportamiento humano creíble.
+- **hard / expert:** Minimax + alfa-beta, profundidad 5 y 6 respectivamente.
+- Añadida dificultad **Expert** (depth 6) en shared types y backend.
+- Tests 6/6 pasan. CA-09 (stateless) y CA-10 (< 2s p95 hard) mantenidos.
 
 **Nota infra para abrir el PR:** actualmente **no hay git remote** configurado. Antes de publicar
 el repo en GitHub, hacer **scrub de secretos** (`SESSION_LOG.md` ~línea 718 tiene un `whsec_` real;
