@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import type { AiMoveRequest, AiMoveResponse } from "../../packages/shared/src/types.ts";
-import { findBestMove } from "./minimax.ts";
 import { findBestMoveAstar } from "./astar.ts";
 
 export const router = new Hono();
@@ -32,14 +31,10 @@ router.post("/internal/ai/move", async (c) => {
   }
 
   const start = Date.now();
-  let result: ReturnType<typeof findBestMove> | ReturnType<typeof findBestMoveAstar>;
+  let result: ReturnType<typeof findBestMoveAstar>;
 
   try {
-    if (difficulty === "easy" || difficulty === "medium") {
-      result = findBestMoveAstar(board, sideToMove, difficulty, rules);
-    } else {
-      result = findBestMove(board, sideToMove, difficulty, rules, 1800);
-    }
+    result = findBestMoveAstar(board, sideToMove, difficulty, rules);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error during move generation";
     return c.json({ code: "NO_MOVES", message }, 422);

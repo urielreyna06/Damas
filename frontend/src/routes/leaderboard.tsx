@@ -8,8 +8,8 @@ export const Route = createFileRoute("/leaderboard")({
   component: LeaderboardPage,
 });
 
-const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard"];
-const DIFF_LABEL: Record<Difficulty, string> = { easy: "Fácil", medium: "Medio", hard: "Difícil" };
+const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "expert"];
+const DIFF_LABEL: Record<Difficulty, string> = { easy: "Fácil", medium: "Medio", hard: "Difícil", expert: "Experto" };
 
 function LeaderboardPage() {
   const [tab, setTab] = useState<Difficulty>("easy");

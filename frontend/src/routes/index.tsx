@@ -12,7 +12,8 @@ export const Route = createFileRoute("/")({
 const DIFFICULTIES: { id: Difficulty; name: string; desc: string }[] = [
   { id: "easy", name: "Fácil", desc: "IA casual, perfecta para aprender los fundamentos." },
   { id: "medium", name: "Medio", desc: "IA táctica con búsqueda media. Te pondrá a prueba." },
-  { id: "hard", name: "Difícil", desc: "Minimax con búsqueda profunda. Casi imbatible." },
+  { id: "hard", name: "Difícil", desc: "A* con búsqueda profunda. Casi imbatible." },
+  { id: "expert", name: "Experto", desc: "Profundidad máxima. Solo para maestros del tablero." },
 ];
 
 function LandingPage() {
@@ -47,7 +48,7 @@ function LandingPage() {
             <span style={{ color: "var(--gold)" }}>Vence a la máquina.</span>
           </h1>
           <p className="muted" style={{ fontSize: 17, maxWidth: 460 }}>
-            Damas inglesas 8×8 contra una IA con tres niveles de dificultad.
+            Damas inglesas 8×8 contra una IA con cuatro niveles de dificultad.
             Sube en el ranking, desbloquea skins y domina el tablero.
           </p>
 
@@ -123,7 +124,7 @@ function LandingPage() {
         .hero-board { transform: rotate(2deg); }
         .diff-grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(4, 1fr);
           gap: 18px;
         }
         @media (max-width: 880px) {

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import type { Board as BoardType, Move, Square, GameStatus, Side, MoveRecord } from "@damas/shared";
 import { Piece } from "./Piece";
 import { resolveSkin, skinStyle } from "../lib/skins";
@@ -40,6 +40,14 @@ export function Board({
   const [pendingPath, setPendingPath] = useState<Square[]>([]);
 
   const skin = useMemo(() => resolveSkin(themeId), [themeId]);
+
+  const [boardShaking, setBoardShaking] = useState(false);
+  useEffect(() => {
+    if (!illegalMoveError) return;
+    setBoardShaking(true);
+    const t = setTimeout(() => setBoardShaking(false), 440);
+    return () => clearTimeout(t);
+  }, [illegalMoveError]);
 
   // Squares the human can move *from*
   const movableOrigins = useMemo<Set<string>>(() => {
@@ -170,7 +178,7 @@ export function Board({
         </div>
       )}
 
-      <div className="dboard" data-skin={skin.dataSkin} style={skinStyle(skin)}>
+      <div className={`dboard${boardShaking ? " board-shake" : ""}`} data-skin={skin.dataSkin} style={skinStyle(skin)}>
         {/* AI thinking overlay */}
         {isAiThinking && (
           <div className="board-overlay">

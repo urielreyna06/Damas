@@ -120,7 +120,7 @@ function ShopPage() {
                     )}
                   </div>
                   <span className="pill" style={{ alignSelf: "flex-start" }}>
-                    {KIND_LABEL[theme.kind] ?? theme.kind}
+                    {theme.tag ?? KIND_LABEL[theme.kind] ?? "Skin"}
                   </span>
                   <p className="muted" style={{ fontSize: 14, flex: 1 }}>{theme.description}</p>
                   <div className="row between" style={{ marginTop: 4 }}>

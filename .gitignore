@@ -1,8 +1,35 @@
 node_modules/
 dist/
 .env
+.env.*
+*.env
 *.env.local
 bun.lockb
 coverage/
 .DS_Store
 *.js.map
+
+# Archives
+*.zip
+
+# Test artifacts
+test-results/
+
+# Internal AI / session docs (private operational notes)
+HANDOFF_PROMPT.md
+SESSION_LOG.md
+
+# Study & reference documents (personal, not for public repo)
+GUIA_DIDACTICA.md
+PRESENTACION.md
+PROJECT_BREAKDOWN.md
+GAMEPLAY_SKINS_FIX.md
+MATCH_ACCESS_FIX.md
+
+# Secrets / keys (extra safety net)
+*.pem
+*.key
+*.p12
+*.pfx
+.secret*
+secrets/

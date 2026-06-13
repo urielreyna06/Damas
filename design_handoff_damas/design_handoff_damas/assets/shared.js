@@ -3,11 +3,12 @@
    ============================================================ */
 (function (global) {
   const LS = {
-    owned:  'damas.owned',
-    active: 'damas.activeSkin',
-    stats:  'damas.stats',
-    games:  'damas.games',
-    user:   'damas.user',
+    owned:      'damas.owned',
+    active:     'damas.activeSkin',
+    stats:      'damas.stats',
+    games:      'damas.games',
+    user:       'damas.user',
+    skinAssets: 'damas.skinAssets',
   };
 
   /* ---- skins (board + piece themes) ---- */
@@ -103,13 +104,24 @@
       vars: { '--sq-light': '#80C8D8', '--sq-dark': '#0A2840', '--frame': '#04121C',
               '--edge': 'rgba(40,180,220,0.55)', '--h1': '#40C0D0', '--h2': '#106878', '--hk': '#043040',
               '--a1': '#2040A8', '--a2': '#081848', '--ak': '#040824' } },
-    { id: 'sombra', name: 'Clan de la Sombra', tag: 'Oscuro', price: 3.99,
+    { id: 'sombra', name: 'Clan de las Sombras', tag: 'Oscuro', price: 3.99,
       blurb: 'Runic obsidian and spectral chains — shadow and silence consume the board.',
       vars: { '--sq-light': '#686868', '--sq-dark': '#0C0C0C', '--frame': '#060406',
               '--edge': 'rgba(140,60,200,0.55)', '--h1': '#A8A8C0', '--h2': '#505070', '--hk': '#202030',
               '--a1': '#40A040', '--a2': '#184818', '--ak': '#0a200a' } },
   ];
   const skinById = (id) => SKINS.find(s => s.id === id) || SKINS[0];
+
+  /* ── clan skins that ship with PNG art ── */
+  const CLAN_SKINS = new Set(['templo','desierto','bosque','hada','fuego','agua','sombra']);
+  const CLAN_FILES = {
+    frame: 'frame.png', tileL: 'tile-light.png', tileD: 'tile-dark.png',
+    manH: 'hero.png', kingH: 'hero-king.png', manF: 'foe.png', kingF: 'foe-king.png',
+  };
+  const SLOT_PROP = {
+    frame: '--frame-img', tileL: '--tile-l-img', tileD: '--tile-d-img',
+    manH: '--piece-man-h', kingH: '--piece-king-h', manF: '--piece-man-f', kingF: '--piece-king-f',
+  };
 
   /* ---- low-level ls helpers ---- */
   function read(key, fallback) {
@@ -138,6 +150,56 @@
     const s = skinById(id);
     el.setAttribute('data-skin', s.id);
     for (const [k, v] of Object.entries(s.vars)) el.style.setProperty(k, v);
+  }
+
+  /* ── asset API: Forja overrides + repo file paths ── */
+  function getAsset(skinId, slot) {
+    const all = read(LS.skinAssets, {});
+    return (all[skinId] && all[skinId][slot]) || null;
+  }
+  function setAsset(skinId, slot, dataURL) {
+    const all = read(LS.skinAssets, {});
+    if (!all[skinId]) all[skinId] = {};
+    all[skinId][slot] = dataURL;
+    write(LS.skinAssets, all);
+  }
+  function clearAssets(skinId) {
+    const all = read(LS.skinAssets, {});
+    delete all[skinId];
+    write(LS.skinAssets, all);
+  }
+  function clearAllAssets() {
+    write(LS.skinAssets, {});
+  }
+  // Priority: Forja dataURL > repo file path > null (CSS medallón fallback)
+  function spriteMap(skinId) {
+    const empty = { frame: null, tileL: null, tileD: null, manH: null, kingH: null, manF: null, kingF: null };
+    if (!CLAN_SKINS.has(skinId)) return empty;
+    const overrides = read(LS.skinAssets, {})[skinId] || {};
+    const result = {};
+    for (const slot of Object.keys(CLAN_FILES)) {
+      result[slot] = overrides[slot] || ('assets/skins/' + skinId + '/' + CLAN_FILES[slot]);
+    }
+    return result;
+  }
+  // Sets CSS custom props on board element so board.css var() references pick them up.
+  // For CSS-only skins: clears all vars so static medallón rules take over.
+  function applySkinAssets(el, skinId) {
+    if (!CLAN_SKINS.has(skinId)) {
+      for (const prop of Object.values(SLOT_PROP)) el.style.removeProperty(prop);
+      return;
+    }
+    const map = spriteMap(skinId);
+    for (const [slot, prop] of Object.entries(SLOT_PROP)) {
+      const val = map[slot];
+      if (val) {
+        // Wrap file paths and dataURLs uniformly in url(...)
+        const urlVal = val.startsWith('data:') ? 'url(' + val + ')' : 'url(' + val + ')';
+        el.style.setProperty(prop, urlVal);
+      } else {
+        el.style.removeProperty(prop);
+      }
+    }
   }
 
   /* ---- stats ---- */
@@ -250,11 +312,13 @@
     }
     el.appendChild(pl);
     applySkin(el, skin);
+    applySkinAssets(el, skin);
   }
 
   global.Store = {
     SKINS, skinById, user, setUser, renderStaticBoard,
     owned, buy, isOwned, activeSkin, setActiveSkin, applySkin,
+    getAsset, setAsset, clearAssets, clearAllAssets, spriteMap, applySkinAssets, CLAN_SKINS,
     stats, setStats, recordResult,
     games, saveGames, getGame, createGame, updateGame, deleteGame, activeGames,
     timeAgo, price, navbar, mountNav,

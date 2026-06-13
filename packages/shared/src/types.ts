@@ -101,13 +101,14 @@ export interface Theme {
   name: string;
   description: string;
   kind: ThemeKind;
+  tag?: string; // display label (e.g. "Warm", "Cyberpunk", "Fantasy")
   priceUsdCents: number; // precio en centavos USD
   stripePriceId: string; // ID del Price en Stripe
-  boardLightColor?: string; // requerido si kind="board" o "bundle"
-  boardDarkColor?: string; // requerido si kind="board" o "bundle"
-  redPieceAsset?: string; // requerido si kind="pieces" o "bundle"
-  blackPieceAsset?: string; // requerido si kind="pieces" o "bundle"
-  previewImageUrl: string;
+  boardLightColor?: string;
+  boardDarkColor?: string;
+  redPieceAsset?: string;
+  blackPieceAsset?: string;
+  previewImageUrl?: string;
   createdAt: string;
 }
 

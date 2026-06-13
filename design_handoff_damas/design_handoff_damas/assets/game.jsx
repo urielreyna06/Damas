@@ -7,7 +7,22 @@ const D = window.Damas;
 const FILES = ['a','b','c','d','e','f','g','h','i','j'];
 const sqName = ([r, c], S) => FILES[c] + (S - r);
 const sleep = (ms) => new Promise(res => setTimeout(res, ms));
-const ALG_LABELS = { easy: 'A* Greedy', medium: 'A* Depth-2', hard: 'Minimax d3', expert: 'Minimax d4 α-β' };
+const ALG_LABELS = { easy: 'A* Greedy', medium: 'A* Depth-2', hard: 'A* Multi-ply', expert: 'A* Expert' };
+
+function spawnParticles(boardEl, r, c, S, color, count) {
+  if (!boardEl) return;
+  const pct = 100 / S;
+  const cx = (c + 0.5) * pct, cy = (r + 0.5) * pct;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.style.cssText = `position:absolute;left:${cx}%;top:${cy}%;width:5px;height:5px;border-radius:50%;` +
+      `background:${color};pointer-events:none;z-index:20;transform:translate(-50%,-50%);` +
+      `--dx:${(Math.random() - 0.5) * 100}px;--dy:${-(Math.random() * 70 + 20)}px;` +
+      `animation:fxParticle ${0.45 + Math.random() * 0.4}s ease-out ${Math.random() * 0.12}s forwards`;
+    boardEl.appendChild(el);
+    setTimeout(() => el.parentNode && el.remove(), 1000);
+  }
+}
 
 let _pid = 0;
 function piecesFromBoard(b) {
@@ -283,11 +298,48 @@ function App() {
   const difficulty = game.difficulty;
   const endedRef = useRef(status !== 'in_progress');
 
+  const [soundOn, setSoundOn] = useState(() => (localStorage.getItem('damas.sound') || 'on') === 'on');
+  function toggleSound(val) {
+    const newVal = typeof val === 'boolean' ? val : !soundOn;
+    setSoundOn(newVal);
+    localStorage.setItem('damas.sound', newVal ? 'on' : 'off');
+  }
+
   useEffect(() => {
-    if (boardRef.current) window.Store.applySkin(boardRef.current, t.theme);
+    if (boardRef.current) {
+      window.Store.applySkin(boardRef.current, t.theme);
+      if (window.Store.applySkinAssets) window.Store.applySkinAssets(boardRef.current, t.theme);
+    }
   }, [t.theme]);
 
   useEffect(() => { window.Store.mountNav('play'); }, []);
+
+  useEffect(() => {
+    if (document.getElementById('damas-fx')) return;
+    const style = document.createElement('style');
+    style.id = 'damas-fx';
+    style.textContent = `
+      @keyframes fxParticle {
+        0%   { transform: translate(-50%,-50%) translate(0,0); opacity:1; }
+        100% { transform: translate(-50%,-50%) translate(var(--dx),var(--dy)); opacity:0; }
+      }
+      @keyframes boardShake {
+        0%,100% { transform: translateX(0); }
+        20% { transform: translateX(-4px); }
+        40% { transform: translateX(4px); }
+        60% { transform: translateX(-3px); }
+        80% { transform: translateX(3px); }
+      }
+      .board.board-shaking { animation: boardShake 0.35s ease-out; }
+      .piece.human.sel .disc { filter: drop-shadow(0 0 7px #4ade80) !important; }
+      .piece.human.selectable:hover .disc { filter: drop-shadow(0 0 5px #4ade80); }
+      @media (pointer:coarse) {
+        .piece { min-width:44px; min-height:44px; }
+        .btn, .btn-sm, .toolbar button { min-height:44px; }
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 1600); }
 
@@ -314,17 +366,25 @@ function App() {
       setPiecesBoth(ps => ps.map(p => p.id === id ? { ...p, r: tr, c: tc } : p));
       const capId = capIds[i];
       if (capId) {
+        const [cr, cc] = move.captures[i];
+        spawnParticles(boardRef.current, cr, cc, S, '#E06060', 8);
+        const bel = boardRef.current;
+        if (bel) { bel.classList.add('board-shaking'); setTimeout(() => bel.classList.remove('board-shaking'), 380); }
         setTimeout(() => setPiecesBoth(ps => ps.map(p => p.id === capId ? { ...p, dying: true } : p)), 150);
         setTimeout(() => setPiecesBoth(ps => ps.filter(p => p.id !== capId)), 470);
       }
       await sleep(290);
     }
-    const [fr] = move.to;
+    const [fr, fc] = move.to;
+    const movingCurrent = piecesRef.current.find(p => p.id === id);
+    const promoted = movingCurrent && !movingCurrent.king &&
+      ((movingCurrent.player === 'human' && fr === 0) || (movingCurrent.player === 'ai' && fr === S - 1));
     setPiecesBoth(ps => ps.map(p => {
       if (p.id !== id) return p;
       const promo = !p.king && ((p.player === 'human' && fr === 0) || (p.player === 'ai' && fr === S - 1));
       return promo ? { ...p, king: true } : p;
     }));
+    if (promoted) spawnParticles(boardRef.current, fr, fc, S, '#F4CB5E', 14);
     await sleep(40);
   }
 
@@ -409,7 +469,16 @@ function App() {
     <div className="game-wrap wrap">
       <div className="game-top">
         <a className="back-link" href="play.html">← Todas las partidas</a>
-        <div className="game-id mono muted-2">Partida #{game.id.slice(1)}</div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <button onClick={() => toggleSound()} title={soundOn ? 'Silenciar' : 'Activar sonido'}
+            style={{ background:'none', border:'none', cursor:'pointer', padding:'4px 6px', color:'var(--muted,#8a8a9a)', lineHeight:1, fontSize:18 }}>
+            {soundOn
+              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+            }
+          </button>
+          <div className="game-id mono muted-2">Partida #{game.id.slice(1)}</div>
+        </div>
       </div>
 
       <div className="game-layout">
@@ -454,6 +523,17 @@ function App() {
                     onChange={v => setTweak('highlight', v)} />
         <TweakToggle label="Sugerencias de movimiento" value={t.hints} onChange={v => setTweak('hints', v)} />
         <TweakToggle label="Coordenadas" value={t.coords} onChange={v => setTweak('coords', v)} />
+        <TweakSection label="Sonido" />
+        <TweakToggle label="Sonido" value={soundOn} onChange={toggleSound} />
+        <TweakSection label="Arte" />
+        <div style={{ padding: '4px 12px 8px' }}>
+          <button onClick={() => {
+            window.Store.clearAllAssets();
+            if (boardRef.current) window.Store.applySkinAssets(boardRef.current, t.theme);
+          }} style={{ width:'100%', padding:'8px 12px', background:'var(--surface-2,#1a1a24)', border:'1px solid var(--line,rgba(255,255,255,.1))', borderRadius:8, color:'var(--muted,#8a8a9a)', cursor:'pointer', fontSize:13 }}>
+            Restaurar arte por defecto
+          </button>
+        </div>
       </TweaksPanel>
     </div>
   );

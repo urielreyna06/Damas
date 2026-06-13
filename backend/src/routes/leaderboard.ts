@@ -7,9 +7,9 @@ export const leaderboardRouter = new Hono();
 // GET /api/leaderboard?difficulty=easy|medium|hard&limit=N — public, no auth required
 leaderboardRouter.get("/", async (c) => {
   const diffParam = c.req.query("difficulty");
-  if (!diffParam || !["easy", "medium", "hard"].includes(diffParam)) {
+  if (!diffParam || !["easy", "medium", "hard", "expert"].includes(diffParam)) {
     return c.json(
-      { code: "INVALID_DIFFICULTY", message: "difficulty query param must be easy|medium|hard" },
+      { code: "INVALID_DIFFICULTY", message: "difficulty query param must be easy|medium|hard|expert" },
       400
     );
   }

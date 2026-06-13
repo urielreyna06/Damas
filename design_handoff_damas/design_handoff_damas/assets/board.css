@@ -138,67 +138,67 @@
 [data-skin="sombra"]   .piece .disc::before { display: none; }
 
 /* templo */
-.board[data-skin="templo"] { background-image: url('skins/templo/frame.png'); background-size: 100% 100%; }
-[data-skin="templo"] .sq.light { background: url('skins/templo/tile-light.png') center/cover no-repeat var(--sq-light); }
-[data-skin="templo"] .sq.dark  { background: url('skins/templo/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
-[data-skin="templo"] .piece.human      .disc { background: url('skins/templo/hero.png')      center/contain no-repeat; box-shadow: none; }
-[data-skin="templo"] .piece.human.king .disc { background: url('skins/templo/hero-king.png') center/contain no-repeat; box-shadow: none; }
-[data-skin="templo"] .piece.ai         .disc { background: url('skins/templo/foe.png')       center/contain no-repeat; box-shadow: none; }
-[data-skin="templo"] .piece.ai.king    .disc { background: url('skins/templo/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+.board[data-skin="templo"] { background-image: var(--frame-img, url('skins/templo/frame.png')); background-size: 100% 100%; }
+[data-skin="templo"] .sq.light { background: var(--tile-l-img, url('skins/templo/tile-light.png')) center/cover no-repeat var(--sq-light); }
+[data-skin="templo"] .sq.dark  { background: var(--tile-d-img, url('skins/templo/tile-dark.png'))  center/cover no-repeat var(--sq-dark); }
+[data-skin="templo"] .piece.human      .disc { background: var(--piece-man-h,  url('skins/templo/hero.png'))      center/contain no-repeat; box-shadow: none; }
+[data-skin="templo"] .piece.human.king .disc { background: var(--piece-king-h, url('skins/templo/hero-king.png')) center/contain no-repeat; box-shadow: none; }
+[data-skin="templo"] .piece.ai         .disc { background: var(--piece-man-f,  url('skins/templo/foe.png'))       center/contain no-repeat; box-shadow: none; }
+[data-skin="templo"] .piece.ai.king    .disc { background: var(--piece-king-f, url('skins/templo/foe-king.png'))  center/contain no-repeat; box-shadow: none; }
 
 /* desierto */
-.board[data-skin="desierto"] { background-image: url('skins/desierto/frame.png'); background-size: 100% 100%; }
-[data-skin="desierto"] .sq.light { background: url('skins/desierto/tile-light.png') center/cover no-repeat var(--sq-light); }
-[data-skin="desierto"] .sq.dark  { background: url('skins/desierto/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
-[data-skin="desierto"] .piece.human      .disc { background: url('skins/desierto/hero.png')      center/contain no-repeat; box-shadow: none; }
-[data-skin="desierto"] .piece.human.king .disc { background: url('skins/desierto/hero-king.png') center/contain no-repeat; box-shadow: none; }
-[data-skin="desierto"] .piece.ai         .disc { background: url('skins/desierto/foe.png')       center/contain no-repeat; box-shadow: none; }
-[data-skin="desierto"] .piece.ai.king    .disc { background: url('skins/desierto/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+.board[data-skin="desierto"] { background-image: var(--frame-img, url('skins/desierto/frame.png')); background-size: 100% 100%; }
+[data-skin="desierto"] .sq.light { background: var(--tile-l-img, url('skins/desierto/tile-light.png')) center/cover no-repeat var(--sq-light); }
+[data-skin="desierto"] .sq.dark  { background: var(--tile-d-img, url('skins/desierto/tile-dark.png'))  center/cover no-repeat var(--sq-dark); }
+[data-skin="desierto"] .piece.human      .disc { background: var(--piece-man-h,  url('skins/desierto/hero.png'))      center/contain no-repeat; box-shadow: none; }
+[data-skin="desierto"] .piece.human.king .disc { background: var(--piece-king-h, url('skins/desierto/hero-king.png')) center/contain no-repeat; box-shadow: none; }
+[data-skin="desierto"] .piece.ai         .disc { background: var(--piece-man-f,  url('skins/desierto/foe.png'))       center/contain no-repeat; box-shadow: none; }
+[data-skin="desierto"] .piece.ai.king    .disc { background: var(--piece-king-f, url('skins/desierto/foe-king.png'))  center/contain no-repeat; box-shadow: none; }
 
 /* bosque */
-.board[data-skin="bosque"] { background-image: url('skins/bosque/frame.png'); background-size: 100% 100%; }
-[data-skin="bosque"] .sq.light { background: url('skins/bosque/tile-light.png') center/cover no-repeat var(--sq-light); }
-[data-skin="bosque"] .sq.dark  { background: url('skins/bosque/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
-[data-skin="bosque"] .piece.human      .disc { background: url('skins/bosque/hero.png')      center/contain no-repeat; box-shadow: none; }
-[data-skin="bosque"] .piece.human.king .disc { background: url('skins/bosque/hero-king.png') center/contain no-repeat; box-shadow: none; }
-[data-skin="bosque"] .piece.ai         .disc { background: url('skins/bosque/foe.png')       center/contain no-repeat; box-shadow: none; }
-[data-skin="bosque"] .piece.ai.king    .disc { background: url('skins/bosque/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+.board[data-skin="bosque"] { background-image: var(--frame-img, url('skins/bosque/frame.png')); background-size: 100% 100%; }
+[data-skin="bosque"] .sq.light { background: var(--tile-l-img, url('skins/bosque/tile-light.png')) center/cover no-repeat var(--sq-light); }
+[data-skin="bosque"] .sq.dark  { background: var(--tile-d-img, url('skins/bosque/tile-dark.png'))  center/cover no-repeat var(--sq-dark); }
+[data-skin="bosque"] .piece.human      .disc { background: var(--piece-man-h,  url('skins/bosque/hero.png'))      center/contain no-repeat; box-shadow: none; }
+[data-skin="bosque"] .piece.human.king .disc { background: var(--piece-king-h, url('skins/bosque/hero-king.png')) center/contain no-repeat; box-shadow: none; }
+[data-skin="bosque"] .piece.ai         .disc { background: var(--piece-man-f,  url('skins/bosque/foe.png'))       center/contain no-repeat; box-shadow: none; }
+[data-skin="bosque"] .piece.ai.king    .disc { background: var(--piece-king-f, url('skins/bosque/foe-king.png'))  center/contain no-repeat; box-shadow: none; }
 
 /* hada */
-.board[data-skin="hada"] { background-image: url('skins/hada/frame.png'); background-size: 100% 100%; }
-[data-skin="hada"] .sq.light { background: url('skins/hada/tile-light.png') center/cover no-repeat var(--sq-light); }
-[data-skin="hada"] .sq.dark  { background: url('skins/hada/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
-[data-skin="hada"] .piece.human      .disc { background: url('skins/hada/hero.png')      center/contain no-repeat; box-shadow: none; }
-[data-skin="hada"] .piece.human.king .disc { background: url('skins/hada/hero-king.png') center/contain no-repeat; box-shadow: none; }
-[data-skin="hada"] .piece.ai         .disc { background: url('skins/hada/foe.png')       center/contain no-repeat; box-shadow: none; }
-[data-skin="hada"] .piece.ai.king    .disc { background: url('skins/hada/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+.board[data-skin="hada"] { background-image: var(--frame-img, url('skins/hada/frame.png')); background-size: 100% 100%; }
+[data-skin="hada"] .sq.light { background: var(--tile-l-img, url('skins/hada/tile-light.png')) center/cover no-repeat var(--sq-light); }
+[data-skin="hada"] .sq.dark  { background: var(--tile-d-img, url('skins/hada/tile-dark.png'))  center/cover no-repeat var(--sq-dark); }
+[data-skin="hada"] .piece.human      .disc { background: var(--piece-man-h,  url('skins/hada/hero.png'))      center/contain no-repeat; box-shadow: none; }
+[data-skin="hada"] .piece.human.king .disc { background: var(--piece-king-h, url('skins/hada/hero-king.png')) center/contain no-repeat; box-shadow: none; }
+[data-skin="hada"] .piece.ai         .disc { background: var(--piece-man-f,  url('skins/hada/foe.png'))       center/contain no-repeat; box-shadow: none; }
+[data-skin="hada"] .piece.ai.king    .disc { background: var(--piece-king-f, url('skins/hada/foe-king.png'))  center/contain no-repeat; box-shadow: none; }
 
 /* fuego */
-.board[data-skin="fuego"] { background-image: url('skins/fuego/frame.png'); background-size: 100% 100%; }
-[data-skin="fuego"] .sq.light { background: url('skins/fuego/tile-light.png') center/cover no-repeat var(--sq-light); }
-[data-skin="fuego"] .sq.dark  { background: url('skins/fuego/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
-[data-skin="fuego"] .piece.human      .disc { background: url('skins/fuego/hero.png')      center/contain no-repeat; box-shadow: none; }
-[data-skin="fuego"] .piece.human.king .disc { background: url('skins/fuego/hero-king.png') center/contain no-repeat; box-shadow: none; }
-[data-skin="fuego"] .piece.ai         .disc { background: url('skins/fuego/foe.png')       center/contain no-repeat; box-shadow: none; }
-[data-skin="fuego"] .piece.ai.king    .disc { background: url('skins/fuego/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+.board[data-skin="fuego"] { background-image: var(--frame-img, url('skins/fuego/frame.png')); background-size: 100% 100%; }
+[data-skin="fuego"] .sq.light { background: var(--tile-l-img, url('skins/fuego/tile-light.png')) center/cover no-repeat var(--sq-light); }
+[data-skin="fuego"] .sq.dark  { background: var(--tile-d-img, url('skins/fuego/tile-dark.png'))  center/cover no-repeat var(--sq-dark); }
+[data-skin="fuego"] .piece.human      .disc { background: var(--piece-man-h,  url('skins/fuego/hero.png'))      center/contain no-repeat; box-shadow: none; }
+[data-skin="fuego"] .piece.human.king .disc { background: var(--piece-king-h, url('skins/fuego/hero-king.png')) center/contain no-repeat; box-shadow: none; }
+[data-skin="fuego"] .piece.ai         .disc { background: var(--piece-man-f,  url('skins/fuego/foe.png'))       center/contain no-repeat; box-shadow: none; }
+[data-skin="fuego"] .piece.ai.king    .disc { background: var(--piece-king-f, url('skins/fuego/foe-king.png'))  center/contain no-repeat; box-shadow: none; }
 
 /* agua */
-.board[data-skin="agua"] { background-image: url('skins/agua/frame.png'); background-size: 100% 100%; }
-[data-skin="agua"] .sq.light { background: url('skins/agua/tile-light.png') center/cover no-repeat var(--sq-light); }
-[data-skin="agua"] .sq.dark  { background: url('skins/agua/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
-[data-skin="agua"] .piece.human      .disc { background: url('skins/agua/hero.png')      center/contain no-repeat; box-shadow: none; }
-[data-skin="agua"] .piece.human.king .disc { background: url('skins/agua/hero-king.png') center/contain no-repeat; box-shadow: none; }
-[data-skin="agua"] .piece.ai         .disc { background: url('skins/agua/foe.png')       center/contain no-repeat; box-shadow: none; }
-[data-skin="agua"] .piece.ai.king    .disc { background: url('skins/agua/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+.board[data-skin="agua"] { background-image: var(--frame-img, url('skins/agua/frame.png')); background-size: 100% 100%; }
+[data-skin="agua"] .sq.light { background: var(--tile-l-img, url('skins/agua/tile-light.png')) center/cover no-repeat var(--sq-light); }
+[data-skin="agua"] .sq.dark  { background: var(--tile-d-img, url('skins/agua/tile-dark.png'))  center/cover no-repeat var(--sq-dark); }
+[data-skin="agua"] .piece.human      .disc { background: var(--piece-man-h,  url('skins/agua/hero.png'))      center/contain no-repeat; box-shadow: none; }
+[data-skin="agua"] .piece.human.king .disc { background: var(--piece-king-h, url('skins/agua/hero-king.png')) center/contain no-repeat; box-shadow: none; }
+[data-skin="agua"] .piece.ai         .disc { background: var(--piece-man-f,  url('skins/agua/foe.png'))       center/contain no-repeat; box-shadow: none; }
+[data-skin="agua"] .piece.ai.king    .disc { background: var(--piece-king-f, url('skins/agua/foe-king.png'))  center/contain no-repeat; box-shadow: none; }
 
 /* sombra */
-.board[data-skin="sombra"] { background-image: url('skins/sombra/frame.png'); background-size: 100% 100%; }
-[data-skin="sombra"] .sq.light { background: url('skins/sombra/tile-light.png') center/cover no-repeat var(--sq-light); }
-[data-skin="sombra"] .sq.dark  { background: url('skins/sombra/tile-dark.png')  center/cover no-repeat var(--sq-dark); }
-[data-skin="sombra"] .piece.human      .disc { background: url('skins/sombra/hero.png')      center/contain no-repeat; box-shadow: none; }
-[data-skin="sombra"] .piece.human.king .disc { background: url('skins/sombra/hero-king.png') center/contain no-repeat; box-shadow: none; }
-[data-skin="sombra"] .piece.ai         .disc { background: url('skins/sombra/foe.png')       center/contain no-repeat; box-shadow: none; }
-[data-skin="sombra"] .piece.ai.king    .disc { background: url('skins/sombra/foe-king.png')  center/contain no-repeat; box-shadow: none; }
+.board[data-skin="sombra"] { background-image: var(--frame-img, url('skins/sombra/frame.png')); background-size: 100% 100%; }
+[data-skin="sombra"] .sq.light { background: var(--tile-l-img, url('skins/sombra/tile-light.png')) center/cover no-repeat var(--sq-light); }
+[data-skin="sombra"] .sq.dark  { background: var(--tile-d-img, url('skins/sombra/tile-dark.png'))  center/cover no-repeat var(--sq-dark); }
+[data-skin="sombra"] .piece.human      .disc { background: var(--piece-man-h,  url('skins/sombra/hero.png'))      center/contain no-repeat; box-shadow: none; }
+[data-skin="sombra"] .piece.human.king .disc { background: var(--piece-king-h, url('skins/sombra/hero-king.png')) center/contain no-repeat; box-shadow: none; }
+[data-skin="sombra"] .piece.ai         .disc { background: var(--piece-man-f,  url('skins/sombra/foe.png'))       center/contain no-repeat; box-shadow: none; }
+[data-skin="sombra"] .piece.ai.king    .disc { background: var(--piece-king-f, url('skins/sombra/foe-king.png'))  center/contain no-repeat; box-shadow: none; }
 
 /* restore interactive states — placed after backgrounds to win on equal specificity (0,4,0) */
 [data-skin="templo"]   .piece.sel .disc,

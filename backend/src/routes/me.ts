@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { ObjectId } from "mongodb";
 import { requireAuth, getClerkUser } from "../clerk/middleware.ts";
 import { col } from "../db/index.ts";
 
@@ -26,8 +25,9 @@ meRouter.get("/", async (c) => {
 
   let activeTheme = null;
   const activeThemeId = user?.["activeThemeId"] as string | undefined;
-  if (activeThemeId && ObjectId.isValid(activeThemeId)) {
-    activeTheme = await col.themes().findOne({ _id: new ObjectId(activeThemeId) });
+  if (activeThemeId) {
+    // themes use string-slug _id (e.g. "wood"), not ObjectId
+    activeTheme = await col.themes().findOne({ _id: activeThemeId } as never);
   }
 
   return c.json({ user, skins, activeTheme });
@@ -38,8 +38,8 @@ meRouter.put("/active-theme", async (c) => {
   const { clerkUserId } = getClerkUser(c);
   const body = await c.req.json<{ themeId: unknown }>();
 
-  if (typeof body.themeId !== "string" || !ObjectId.isValid(body.themeId)) {
-    return c.json({ code: "INVALID_THEME_ID", message: "themeId must be a valid id" }, 400);
+  if (typeof body.themeId !== "string" || body.themeId.trim().length === 0) {
+    return c.json({ code: "INVALID_THEME_ID", message: "themeId must be a non-empty string" }, 400);
   }
 
   // CA-18: verify ownership before activating

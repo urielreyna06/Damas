@@ -12,7 +12,8 @@ export const Route = createFileRoute("/play")({
 const DIFFICULTIES: { id: Difficulty; name: string; desc: string }[] = [
   { id: "easy", name: "Fácil", desc: "IA casual, perfecta para aprender." },
   { id: "medium", name: "Medio", desc: "IA táctica, te pondrá a prueba." },
-  { id: "hard", name: "Difícil", desc: "Búsqueda profunda, casi imbatible." },
+  { id: "hard", name: "Difícil", desc: "A* profunda, casi imbatible." },
+  { id: "expert", name: "Experto", desc: "Profundidad máxima. Solo para maestros." },
 ];
 
 function PlayPage() {
@@ -188,7 +189,7 @@ function PlayPage() {
       <style>{`
         .play-diff-grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(4, 1fr);
           gap: 18px;
         }
         @media (max-width: 760px) {
