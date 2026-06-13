@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useAuth } from "@clerk/tanstack-start";
 import { useEffect, useState } from "react";
-import { getThemes, getMe, purchaseTheme } from "../lib/api";
+import { getThemes, getMe, purchaseTheme, verifyPayment } from "../lib/api";
 import { StaticBoard } from "../components/ui/StaticBoard";
 import type { Theme } from "@damas/shared";
 
@@ -22,6 +22,7 @@ function ShopPage() {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -36,11 +37,29 @@ function ShopPage() {
     })();
   }, []);
 
-  // Owned skins (non-critical: badge only)
+  // Load owned skins once signed in; verify Stripe payment if returning from checkout
   useEffect(() => {
+    if (!isSignedIn) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const isSuccess = params.get("success") === "1";
+    const sessionId = params.get("session_id");
+    const themeId = params.get("theme");
+
     void (async () => {
       try {
         const token = await getToken();
+
+        if (isSuccess && sessionId && themeId) {
+          try {
+            await verifyPayment(themeId, sessionId, token ?? undefined);
+            setSuccessMsg("¡Pago confirmado! Activa tu nueva skin en tu perfil.");
+            window.history.replaceState({}, "", "/shop");
+          } catch {
+            // Already owned or non-fatal — still refresh owned list below
+          }
+        }
+
         const me = await getMe(token ?? undefined);
         setOwned(new Set(me.skins.map((s) => s.themeId)));
       } catch {
@@ -48,7 +67,7 @@ function ShopPage() {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isSignedIn]);
 
   async function handlePurchase(themeId: string) {
     setPurchasing(themeId);
@@ -73,6 +92,13 @@ function ShopPage() {
           afectan la mecánica del juego.
         </p>
       </div>
+
+      {successMsg && (
+        <div className="badge badge-easy" style={{ marginBottom: 18, padding: "8px 14px" }}>
+          <span className="dot" />
+          {successMsg}
+        </div>
+      )}
 
       {error && (
         <div className="badge badge-hard" style={{ marginBottom: 18, padding: "8px 14px" }}>

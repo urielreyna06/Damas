@@ -130,3 +130,18 @@ export async function setActiveTheme(themeId: string, token?: string): Promise<v
     token
   );
 }
+
+export async function verifyPayment(
+  themeId: string,
+  checkoutSessionId: string,
+  token?: string
+): Promise<{ success: boolean }> {
+  return fetchJson<{ success: boolean }>(
+    `/api/themes/${themeId}/verify-payment`,
+    {
+      method: "POST",
+      body: JSON.stringify({ checkoutSessionId }),
+    },
+    token
+  );
+}
