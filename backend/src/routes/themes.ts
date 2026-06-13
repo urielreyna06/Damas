@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { ObjectId } from "mongodb";
 import { requireAuth, getClerkUser } from "../clerk/middleware.ts";
 import { col } from "../db/index.ts";
 import { createCheckoutSession } from "../stripe/checkout.ts";
@@ -17,11 +16,11 @@ themesRouter.post("/:id/purchase", requireAuth, async (c) => {
   const { clerkUserId } = getClerkUser(c);
   const id = c.req.param("id");
 
-  if (!id || !ObjectId.isValid(id)) {
+  if (!id) {
     return c.json({ code: "NOT_FOUND", message: "Theme not found" }, 404);
   }
 
-  const theme = await col.themes().findOne({ _id: new ObjectId(id) });
+  const theme = await col.themes().findOne({ _id: id });
   if (!theme) {
     return c.json({ code: "NOT_FOUND", message: "Theme not found" }, 404);
   }
