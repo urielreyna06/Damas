@@ -25,9 +25,11 @@ describe("resolveSkin", () => {
 });
 
 describe("SKINS", () => {
-  it("define las 6 skins con todas las CSS vars requeridas", () => {
+  it("toda skin del catálogo define las CSS vars requeridas", () => {
     const required = ["--sq-light", "--sq-dark", "--frame", "--edge", "--h1", "--h2", "--hk", "--a1", "--a2", "--ak"];
-    expect(Object.keys(SKINS)).toHaveLength(6);
+    // The catalog shipped as a 13-skin system (UI/UX overhaul). The meaningful
+    // invariant is that EVERY skin is fully specified, regardless of count.
+    expect(Object.keys(SKINS).length).toBeGreaterThanOrEqual(13);
     for (const skin of Object.values(SKINS)) {
       for (const key of required) {
         expect(skin.vars).toHaveProperty(key);

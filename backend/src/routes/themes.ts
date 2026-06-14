@@ -20,7 +20,9 @@ themesRouter.post("/:id/purchase", requireAuth, async (c) => {
     return c.json({ code: "NOT_FOUND", message: "Theme not found" }, 404);
   }
 
-  const theme = await col.themes().findOne({ _id: id });
+  // themes use slug-strings as _id (e.g. "classic_wood"); collection is typed
+  // with ObjectId, so cast as never to reflect the slug-string _id (cf. me.ts).
+  const theme = await col.themes().findOne({ _id: id } as never);
   if (!theme) {
     return c.json({ code: "NOT_FOUND", message: "Theme not found" }, 404);
   }

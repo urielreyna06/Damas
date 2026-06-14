@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Tests + typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # --ignore-scripts avoids the `prepare` git-hook installer (CLAUDE.md §9)
+      - name: Install dependencies
+        run: bun install --ignore-scripts
+
+      # No Docker/MongoDB needed: backend integration tests mock the col.* layer
+      # and the Clerk middleware (see TEST_REPORT.md §2.2).
+      - name: Run test suite (unit + integration)
+        run: bun run test:all
+
+      - name: Typecheck backend
+        run: bun run --cwd backend typecheck

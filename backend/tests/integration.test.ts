@@ -9,14 +9,18 @@ const {
   mockGamesFind,
   mockGamesUpdateOne,
   mockLeaderboardInsertOne,
+  mockLeaderboardFind,
   mockThemesFind,
+  mockThemesFindOne,
 } = vi.hoisted(() => ({
   mockGamesInsertOne: vi.fn(),
   mockGamesFindOne: vi.fn(),
   mockGamesFind: vi.fn(),
   mockGamesUpdateOne: vi.fn(),
   mockLeaderboardInsertOne: vi.fn(),
+  mockLeaderboardFind: vi.fn(),
   mockThemesFind: vi.fn(),
+  mockThemesFindOne: vi.fn(),
 }));
 
 vi.mock("../src/db/index.ts", () => ({
@@ -29,8 +33,8 @@ vi.mock("../src/db/index.ts", () => ({
       find: mockGamesFind,
       updateOne: mockGamesUpdateOne,
     }),
-    leaderboard: () => ({ insertOne: mockLeaderboardInsertOne }),
-    themes: () => ({ find: mockThemesFind }),
+    leaderboard: () => ({ insertOne: mockLeaderboardInsertOne, find: mockLeaderboardFind }),
+    themes: () => ({ find: mockThemesFind, findOne: mockThemesFindOne }),
     userSkins: () => ({}),
     users: () => ({}),
   },
@@ -342,7 +346,10 @@ describe("POST /:id/moves — move validation", () => {
 
 describe("GET /api/leaderboard — public ranking", () => {
   it("returns 200 with leaderboard entries (CA-16 public access)", async () => {
-    const mockFind = vi.fn().mockReturnValue({
+    // NOTE: leaderboardRouter is statically imported at the top of this file, so a
+    // per-test vi.doMock cannot retroactively change its bound `col`. We configure
+    // the hoisted mockLeaderboardFind instead, which the router already references.
+    mockLeaderboardFind.mockReturnValue({
       sort: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
       toArray: vi.fn().mockResolvedValue([
@@ -358,22 +365,11 @@ describe("GET /api/leaderboard — public ranking", () => {
       ]),
     });
 
-    vi.doMock("../src/db/index.ts", () => ({
-      connectDb: vi.fn(),
-      getDb: vi.fn(),
-      col: {
-        games: () => ({ insertOne: mockGamesInsertOne, findOne: mockGamesFindOne, find: mockGamesFind, updateOne: mockGamesUpdateOne }),
-        leaderboard: () => ({ find: mockFind }),
-        themes: () => ({ find: mockThemesFind }),
-        userSkins: () => ({}),
-        users: () => ({}),
-      },
-    }));
-
     const res = await leaderboardRouter.request("/?difficulty=easy&limit=10", { method: "GET" });
     expect(res.status).toBe(200);
     const data = await res.json() as unknown[];
     expect(Array.isArray(data)).toBe(true);
+    expect(data.length).toBe(1);
   });
 });
 
@@ -485,6 +481,7 @@ describe("GET /api/themes — public skin catalog", () => {
   });
 
   it("returns 404 for unknown theme on purchase endpoint", async () => {
+    mockThemesFindOne.mockResolvedValue(null); // theme lookup misses → 404 NOT_FOUND
     const { themesRouter } = await import("../src/routes/themes.ts");
     const res = await themesRouter.request("/not-a-valid-object-id/purchase", {
       method: "POST",

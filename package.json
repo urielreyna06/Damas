@@ -12,6 +12,10 @@
     "dev": "docker compose up --build",
     "typecheck": "bun run --filter='*' typecheck",
     "test": "bun run --filter='*' test",
+    "test:unit": "bun run --cwd ai-service test && bun run --cwd frontend test",
+    "test:integration": "bun run --cwd backend test",
+    "test:e2e": "playwright test",
+    "test:all": "bun run test:unit && bun run test:integration",
     "install:hooks": "bash scripts/install-hooks.sh",
     "prepare": "bash scripts/install-hooks.sh",
     "seed": "cd backend && bun run src/db/seed.ts"
