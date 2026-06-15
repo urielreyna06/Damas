@@ -76,9 +76,14 @@
   content: ""; position: absolute; inset: 15%; border-radius: 50%;
   box-shadow: inset 0 0 0 2px rgba(255,255,255,.16), inset 0 0 0 3px rgba(0,0,0,.12);
 }
-.crown { font-size: clamp(10px, 2.6vw, 26px); line-height: 1; position: relative; z-index: 1; }
-.piece.human .crown { color: var(--hk); }
-.piece.ai .crown    { color: #F6D277; }
+.crown {
+  font-size: clamp(11px, 2.9vw, 28px); line-height: 1; position: relative; z-index: 1;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.5));
+}
+/* Crowns render only on kings — give them gold weight + an emboss so the
+   king reads instantly instead of as a muddy dark glyph. */
+.piece.human .crown { color: var(--h1); text-shadow: 0 1px 0 rgba(0,0,0,.4), 0 0 6px var(--edge); }
+.piece.ai .crown    { color: #FBE08A; text-shadow: 0 1px 0 rgba(0,0,0,.55), 0 0 6px rgba(0,0,0,.4); }
 
 .piece.selectable { cursor: pointer; }
 .piece.selectable:hover .disc {
@@ -246,4 +251,36 @@
   40% { transform: translateX(5px); }
   60% { transform: translateX(-3px); }
   80% { transform: translateX(3px); }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SKIN POLISH (visual-only) — premium kings + grounded clan sprites.
+   No markup/JS contract changes. CSS-skin and clan rules stay isolated by
+   selector specificity: clan `.disc` background/box-shadow rules (prefixed
+   with [data-skin=…]) outrank these, so PNG sprites are untouched.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* CSS-skin kings: gold medallion ring + deeper dome so a king reads as
+   elevated vs a man (clan skins keep their dedicated king PNG). */
+.piece.king .disc {
+  box-shadow: inset 0 2px 3px rgba(255,255,255,.45), inset 0 -5px 7px rgba(0,0,0,.45),
+              inset 0 0 0 3px var(--edge), inset 0 0 12px rgba(0,0,0,.22),
+              0 5px 10px rgba(0,0,0,.5);
+}
+.piece.human.king .disc { background: radial-gradient(circle at 36% 28%, var(--h1), var(--h2) 78%); }
+.piece.ai.king    .disc { background: radial-gradient(circle at 36% 28%, var(--a1), var(--a2) 78%); }
+
+/* Ground PNG clan sprites with a contact shadow (follows sprite alpha) so
+   pieces sit ON the board instead of looking pasted on; kings sit heavier. */
+[data-skin="templo"] .piece .disc, [data-skin="desierto"] .piece .disc,
+[data-skin="bosque"] .piece .disc, [data-skin="hada"] .piece .disc,
+[data-skin="fuego"] .piece .disc, [data-skin="agua"] .piece .disc,
+[data-skin="sombra"] .piece .disc {
+  filter: drop-shadow(0 3px 3px rgba(0,0,0,.5));
+}
+[data-skin="templo"] .piece.king .disc, [data-skin="desierto"] .piece.king .disc,
+[data-skin="bosque"] .piece.king .disc, [data-skin="hada"] .piece.king .disc,
+[data-skin="fuego"] .piece.king .disc, [data-skin="agua"] .piece.king .disc,
+[data-skin="sombra"] .piece.king .disc {
+  filter: drop-shadow(0 4px 5px rgba(0,0,0,.62));
 }

@@ -102,10 +102,13 @@ function buildCaptures(
     const newPath = [...path, landSquare];
     const newCaptures = [...captures, { row: midRow, col: midCol }];
 
-    // Check for promotion (terminates the chain)
+    // Check for promotion (a man reaching its back row crowns and ENDS the
+    // chain — CA-04). Kings never re-promote and keep capturing, matching the
+    // backend arbiter (moveGenerator.ts) so the two engines agree.
     const promoted =
-      (piece.side === "red" && landRow === 0) ||
-      (piece.side === "black" && landRow === 7);
+      piece.kind === "man" &&
+      ((piece.side === "red" && landRow === 0) ||
+        (piece.side === "black" && landRow === 7));
 
     if (promoted) {
       results.push({ path: newPath, captures: newCaptures, promotion: true });
@@ -163,9 +166,12 @@ export function generateLegalMoves(
         if (board[toRow]![toCol] !== null) continue;
 
         const to: Square = { row: toRow, col: toCol };
+        // Only men promote; a king on its back row is not re-crowned (matches
+        // the backend arbiter so move metadata stays in lockstep).
         const promoted =
-          (piece.side === "red" && toRow === 0) ||
-          (piece.side === "black" && toRow === 7);
+          piece.kind === "man" &&
+          ((piece.side === "red" && toRow === 0) ||
+            (piece.side === "black" && toRow === 7));
         quietMoves.push({ path: [from, to], captures: [], promotion: promoted });
       }
     }

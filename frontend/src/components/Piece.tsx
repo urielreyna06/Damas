@@ -22,6 +22,10 @@ interface PieceProps {
 export function Piece({ piece, isSelected, isLastMoved, finish = "glossy" }: PieceProps) {
   const side = piece.side === "red" ? "human" : "ai";
   const cls = ["piece", side];
+  // `king` drives both the CSS-skin crown medallion and the clan-skin king
+  // sprites (board.css `.piece.{side}.king .disc`). Without it, clan kings
+  // silently fell back to the man sprite.
+  if (piece.kind === "king") cls.push("king");
   if (isSelected) cls.push("sel");
   if (isLastMoved) cls.push("lastmoved");
 
