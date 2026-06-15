@@ -327,18 +327,22 @@ cd frontend   && bun run dev   # puerto 3000
 ## 10. Tests
 
 ```bash
-# ── Unitarios / integración (sin Docker) ─────────────────────────────
-cd backend    && bun test tests/rules.test.ts   # 19 pass — CA-01..CA-07
-cd ai-service && bun test                       # 6 pass  — CA-09, CA-10
+# ── Toda la suite (sin Docker, sin browser) — 132 tests en verde ─────
+bun run test:all            # = test:unit (ai-service 35 + frontend 30) + test:integration (backend 67)
+bun run test:unit
+bun run test:integration
 
-# ── Con Docker (requiere MongoDB para integración) ────────────────────
-docker exec damas-backend bun test              # rules (19) + integración
-docker exec damas-ai-service bun test           # CA-09, CA-10 (6 pass)
-bun run --cwd frontend test                     # unit tests RTL (desde WSL)
+# ── Por workspace ─────────────────────────────────────────────────────
+cd backend    && bun test   # rules (CA-01..07) + integration + shop (Stripe CA-17/18) + fuzz
+cd ai-service && bun test   # heuristic, astar, minimax, ai (CA-09/10) + parity (paridad de motores)
+bun run --cwd frontend test # RTL: Board, Leaderboard, DifficultyBadge, EndModal, StaticBoard, skins
 
-# ── Con cobertura (objetivo ≥80%) ────────────────────────────────────
-cd backend    && bun run test:coverage
-cd ai-service && bun run test:coverage
+# ── Typecheck (los 3 workspaces en verde) ────────────────────────────
+bun run --cwd backend typecheck && bun run --cwd ai-service typecheck && bun run --cwd frontend typecheck
+
+# ── CI gate: .github/workflows/ci.yml corre test:all + backend typecheck en push/PR a master.
+# ── Cobertura: umbrales ≥80% DECLARADOS pero NO aplicados (falta @vitest/coverage-v8 — R-4).
+#    No correr test:coverage hasta instalar la dependencia.
 
 # ── Auditoría E2E HTTP (no requiere browser, corre contra Docker) ─────
 cd /mnt/a/Claude/Projects/Damas && bun run e2e/http-audit.ts
