@@ -4,12 +4,14 @@ const LABELS: Record<Difficulty, string> = {
   easy: "Fácil",
   medium: "Medio",
   hard: "Difícil",
+  expert: "Experto",
 };
 
 const CLASS: Record<Difficulty, string> = {
   easy: "badge badge-easy",
   medium: "badge badge-medium",
   hard: "badge badge-hard",
+  expert: "badge badge-expert",
 };
 
 /** Color-coded difficulty pill (green / amber / red). */

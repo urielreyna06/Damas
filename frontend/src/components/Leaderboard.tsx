@@ -5,7 +5,7 @@ interface LeaderboardProps {
   difficulty: Difficulty;
 }
 
-const DIFF_LABEL: Record<Difficulty, string> = { easy: "Fácil", medium: "Medio", hard: "Difícil" };
+const DIFF_LABEL: Record<Difficulty, string> = { easy: "Fácil", medium: "Medio", hard: "Difícil", expert: "Experto" };
 
 const MEDAL: Record<number, { color: string; ring: string }> = {
   1: { color: "#F4CB5E", ring: "rgba(227,178,60,.45)" }, // gold
